@@ -8,7 +8,7 @@ import Onboarding from "./pages/Onboarding";
 import DashboardLayout from "./layouts/DashboardLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
-import Overview from "./features/Dashboard/Overview";
+import Overview from "./features/dashboard/Overview";
 import "./App.css";
 import LandingPage from "./pages/Landing";
 import ConnectedAccounts from "./pages/ConnectedAccounts";
