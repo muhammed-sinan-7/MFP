@@ -64,8 +64,6 @@ services:
       context: ./mfp_backend
     container_name: mfp_flower
     command: celery -A config flower --port=5555 --address=0.0.0.0
-    ports:
-      - "5555:5555"
     env_file:
       - .env
     depends_on:
@@ -78,11 +76,13 @@ services:
     container_name: mfp_nginx
     ports:
       - "80:80"
+      - "443:443"   
     volumes:
       - ./mfp_backend/nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./mfp_backend:/app
       - ./certbot/www:/var/www/certbot
       - ./certbot/conf:/etc/letsencrypt
+      - static_volume:/app/staticfiles
     depends_on:
       - web
     restart: always
