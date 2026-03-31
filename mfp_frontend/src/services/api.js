@@ -61,15 +61,24 @@ export const clearAuthStorage = () => {
 };
 
 export const refreshAccessToken = async () => {
-  const response = await axios.post(
-    `${API_BASE}/auth/token/refresh/`,
-    {},
-    { withCredentials: true },
-  );
+  try {
+    const response = await axios.post(
+      `${API_BASE}/auth/token/refresh/`,
+      {},
+      { withCredentials: true },
+    );
 
-  const newAccessToken = response.data.access;
-  setAccessToken(newAccessToken);
-  return newAccessToken;
+    const newAccessToken = response.data.access;
+    setAccessToken(newAccessToken);
+    return newAccessToken;
+  } catch (error) {
+    if (error.response?.status === 401) {
+      clearAccessToken();
+      return null;
+    }
+
+    throw error;
+  }
 };
 
 
@@ -135,16 +144,34 @@ API.interceptors.response.use(
     isRefreshing = true;
 
     try {
+      const hadAccessToken = Boolean(accessToken);
       const newAccessToken = await refreshAccessToken();
+      if (!newAccessToken) {
+        clearAuthStorage();
+        if (hadAccessToken) {
+          onRefreshFailed();
+        } else {
+          refreshSubscribers.forEach((callback) => callback(null));
+          refreshSubscribers = [];
+        }
+        return Promise.reject(error);
+      }
+
       onRefreshed(newAccessToken);
       originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
       return API(originalRequest);
 
     } catch (refreshError) {
+      const hadAccessToken = Boolean(accessToken);
       clearAuthStorage();
 
       // ❌ reject queued requests
-      onRefreshFailed();
+      if (hadAccessToken) {
+        onRefreshFailed();
+      } else {
+        refreshSubscribers.forEach((callback) => callback(null));
+        refreshSubscribers = [];
+      }
 
       return Promise.reject(refreshError);
     } finally {

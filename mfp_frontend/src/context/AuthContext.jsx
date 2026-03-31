@@ -11,6 +11,16 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const publicPaths = [
+    "/",
+    "/login",
+    "/register",
+    "/verify-otp",
+    "/forgot-password",
+    "/reset-password",
+    "/terms",
+    "/privacy",
+  ];
 
   const syncCurrentUser = async () => {
     const { data } = await getCurrentUser();
@@ -28,8 +38,23 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const initializeAuth = async () => {
+      const pathname = window.location.pathname;
+      const isPublicPath = publicPaths.some(
+        (path) => pathname === path || pathname.startsWith(`${path}/`),
+      );
+
+      if (isPublicPath) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        await refreshAccessToken();
+        const refreshedAccessToken = await refreshAccessToken();
+        if (!refreshedAccessToken) {
+          setUser(null);
+          return;
+        }
+
         await syncCurrentUser();
       } catch (error) {
         clearAuthStorage();
@@ -85,7 +110,13 @@ export const AuthProvider = ({ children }) => {
 
     const intervalId = window.setInterval(async () => {
       try {
-        await refreshAccessToken();
+        const refreshedAccessToken = await refreshAccessToken();
+        if (!refreshedAccessToken) {
+          clearAuthStorage();
+          setUser(null);
+          return;
+        }
+
         await syncCurrentUser();
       } catch (error) {
         clearAuthStorage();

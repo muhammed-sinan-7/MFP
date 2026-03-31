@@ -47,17 +47,23 @@ export default function VerifyOtp() {
   const onSubmit = async (data) => {
     setServerError(null);
     try {
+      const normalizedOtp = data.otp.replace(/\D/g, "").slice(0, 6);
       const response = await verifyOtp({
         email,
-        otp: data.otp,
+        otp: normalizedOtp,
       });
-      const { access, id, email } = response.data;
-      login({ access, id, email });
+      const { access, id, email: verifiedEmail } = response.data;
+      login({ access, id, email: verifiedEmail });
       sessionStorage.removeItem("otpEmail");
       navigate("/onboarding");
     } catch (error) {
       const res = error.response?.data;
-      setServerError(res?.error || "Verification failed");
+      const serializerError =
+        res && typeof res === "object"
+          ? Object.values(res).flat().find((value) => typeof value === "string")
+          : null;
+
+      setServerError(res?.error || serializerError || "Verification failed");
       if (res?.attempts_left !== undefined) setAttemptsLeft(res.attempts_left);
       if (res?.locked) setIsLocked(true);
     }
@@ -95,6 +101,8 @@ export default function VerifyOtp() {
               <input
                 {...register("otp")}
                 maxLength={6}
+                inputMode="numeric"
+                pattern="[0-9]*"
                 autoFocus
                 disabled={isSubmitting || isLocked}
                 placeholder="000000"
