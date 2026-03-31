@@ -50,8 +50,8 @@ export default function SchedulePage() {
         filters["platforms__publish_status"] = statusFilter;
       }
 
-      while (hasNext && page <= 25) {
-        const res = await getPosts(page, filters);
+      while (hasNext && page <= 10) {
+        const res = await getPosts(page, filters, 200);
         const payload = res?.data || {};
         const rows = payload.results || [];
         merged.push(...rows);
@@ -122,12 +122,16 @@ export default function SchedulePage() {
 
     async function loadTargets() {
       try {
+        if (targets.length) {
+          return;
+        }
+
         let page = 1;
         let hasNext = true;
         const merged = [];
 
-        while (hasNext && page <= 10) {
-          const res = await getPublishingTargets(page);
+        while (hasNext && page <= 3) {
+          const res = await getPublishingTargets(page, 100);
           const payload = res?.data || {};
 
           if (Array.isArray(payload)) {
@@ -148,7 +152,7 @@ export default function SchedulePage() {
     }
 
     loadTargets();
-  }, [isDrawerOpen]);
+  }, [isDrawerOpen, targets.length]);
 
   useEffect(() => {
     if (!isDrawerOpen) return;

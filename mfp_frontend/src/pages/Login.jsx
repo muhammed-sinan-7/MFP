@@ -49,6 +49,7 @@ export default function Login() {
         id,
         email,
         org: org_id ? { id: org_id, name: org_name, role } : undefined,
+        rememberMe,
       });
       navigate(org_id ? "/dashboard" : "/onboarding");
     } catch (error) {

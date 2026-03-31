@@ -171,8 +171,6 @@ export const AuthProvider = ({ children }) => {
           persistUser(null);
           return;
         }
-
-        await syncCurrentUser();
       } catch (error) {
         clearAuthStorage();
         setUser(null);
@@ -183,8 +181,8 @@ export const AuthProvider = ({ children }) => {
     return () => window.clearInterval(intervalId);
   }, [user]);
 
-  const login = ({ access, id, email, org }) => {
-    setAccessToken(access);
+  const login = ({ access, id, email, org, rememberMe = false }) => {
+    setAccessToken(access, { persist: rememberMe });
 
     const nextUser = {
       isAuthenticated: true,

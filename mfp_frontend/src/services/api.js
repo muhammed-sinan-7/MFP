@@ -8,6 +8,20 @@ const API = axios.create({
 });
 
 const ACCESS_TOKEN_STORAGE_KEY = "auth:access_token";
+const ACCESS_TOKEN_STORAGE_MODE_KEY = "auth:access_token_mode";
+
+const getTokenStorage = () => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const mode = window.localStorage.getItem(ACCESS_TOKEN_STORAGE_MODE_KEY);
+    return mode === "local" ? window.localStorage : window.sessionStorage;
+  } catch (error) {
+    return window.sessionStorage;
+  }
+};
 
 const loadPersistedAccessToken = () => {
   if (typeof window === "undefined") {
@@ -15,7 +29,8 @@ const loadPersistedAccessToken = () => {
   }
 
   try {
-    return window.sessionStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+    const storage = getTokenStorage();
+    return storage?.getItem(ACCESS_TOKEN_STORAGE_KEY) || null;
   } catch (error) {
     return null;
   }
@@ -60,7 +75,7 @@ const onRefreshFailed = () => {
   broadcastAuthEvent("logout");
 };
 
-export const setAccessToken = (token) => {
+export const setAccessToken = (token, options = {}) => {
   accessToken = token;
 
   if (typeof window === "undefined") {
@@ -69,11 +84,22 @@ export const setAccessToken = (token) => {
 
   try {
     if (token) {
-      window.sessionStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, token);
+      const persist = Boolean(options.persist);
+      const targetStorage = persist ? window.localStorage : window.sessionStorage;
+      const otherStorage = persist ? window.sessionStorage : window.localStorage;
+
+      targetStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, token);
+      window.localStorage.setItem(
+        ACCESS_TOKEN_STORAGE_MODE_KEY,
+        persist ? "local" : "session",
+      );
+      otherStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
       return;
     }
 
     window.sessionStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+    window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+    window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_MODE_KEY);
   } catch (error) {
   }
 };

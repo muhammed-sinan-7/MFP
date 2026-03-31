@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   getPosts,
   deletePost,
   getPostDetail,
   restorePost,
 } from "../services/postService";
-import { Navigate } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 // S3 already returns full https:// URLs — no prefix needed
 
@@ -29,40 +28,49 @@ export default function PostsPage() {
   const [page, setPage] = useState(1);
   const [count, setCount] = useState(0);
   const [dateRangeMode, setDateRangeMode] = useState("all");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const navigate = useNavigate();
   const pageSize = 10;
   const totalPages = Math.ceil(count / pageSize);
+  const requestIdRef = useRef(0);
 
   const loadPosts = async (pageNumber = 1) => {
+    const requestId = ++requestIdRef.current;
     try {
       const filters = {
-        search,
+        search: debouncedSearch,
         platforms__publishing_target__provider: platform,
         platforms__publish_status: status,
       };
 
-      const res = await getPosts(pageNumber, filters);
+      const res = await getPosts(pageNumber, filters, pageSize);
+
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
 
       setPosts(res.data.results || []);
       setCount(res.data.count || 0);
     } catch (err) {
       console.error("Failed to load posts", err);
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    loadPosts(page);
-  }, [page]);
+    const delay = window.setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 250);
+
+    return () => window.clearTimeout(delay);
+  }, [search]);
 
   useEffect(() => {
-    const delay = setTimeout(() => {
-      loadPosts(1);
-    }, 500);
-
-    return () => clearTimeout(delay);
-  }, [search, platform, status]);
+    loadPosts(page);
+  }, [page, debouncedSearch, platform, status]);
 
   const visiblePosts = useMemo(() => {
     if (dateRangeMode === "all") return posts;
@@ -207,14 +215,20 @@ export default function PostsPage() {
         <input
           type="text"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
           placeholder="Search by title, author, or keyword..."
           className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm w-full sm:w-80 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
         <div className="flex items-center gap-2 flex-wrap">
           <select
             value={platform}
-            onChange={(e) => setPlatform(e.target.value)}
+            onChange={(e) => {
+              setPlatform(e.target.value);
+              setPage(1);
+            }}
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
           >
             <option value="">All Platforms</option>
@@ -224,7 +238,10 @@ export default function PostsPage() {
           </select>
           <select
             value={status}
-            onChange={(e) => setStatus(e.target.value)}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              setPage(1);
+            }}
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
           >
             <option value="">All Status</option>
@@ -244,7 +261,7 @@ export default function PostsPage() {
               setSearch("");
               setPlatform("");
               setStatus("");
-              loadPosts(1);
+              setPage(1);
             }}
             className="text-blue-600 text-sm font-medium"
           >
