@@ -18,6 +18,7 @@ export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
 
   const {
     register,
@@ -29,7 +30,10 @@ export default function Login() {
 
   const onSubmit = async (data) => {
     try {
-      const response = await loginUser(data);
+      const response = await loginUser({
+        ...data,
+        remember_me: rememberMe,
+      });
       const res = response.data;
 
       if (res.requires_verification) {
@@ -120,6 +124,8 @@ export default function Login() {
             <input
               type="checkbox"
               id="remember"
+              checked={rememberMe}
+              onChange={(event) => setRememberMe(event.target.checked)}
               className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
             />
             <label htmlFor="remember" className="text-sm text-slate-600">
