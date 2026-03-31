@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import {
   clearAuthStorage,
+  getAccessToken,
   refreshAccessToken,
   setAccessToken,
 } from "../services/api";
@@ -83,6 +84,18 @@ export const AuthProvider = ({ children }) => {
       if (storedUser?.isAuthenticated) {
         setUser(storedUser);
         setLoading(false);
+      }
+
+      if (getAccessToken()) {
+        try {
+          await syncCurrentUser();
+          setLoading(false);
+          return;
+        } catch (error) {
+          clearAuthStorage();
+          setUser(null);
+          persistUser(null);
+        }
       }
 
       try {
@@ -189,10 +202,10 @@ export const AuthProvider = ({ children }) => {
   const setOrganization = (org) => {
     setUser((prev) => {
       const nextUser = {
-      ...(prev ?? { isAuthenticated: true }),
-      orgId: org.id,
-      orgName: org.name ?? null,
-      role: org.role ?? null,
+        ...(prev ?? { isAuthenticated: true }),
+        orgId: org.id,
+        orgName: org.name ?? null,
+        role: org.role ?? null,
       };
 
       persistUser(nextUser);

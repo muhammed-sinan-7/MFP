@@ -7,7 +7,21 @@ const API = axios.create({
   withCredentials: true,
 });
 
-let accessToken = null;
+const ACCESS_TOKEN_STORAGE_KEY = "auth:access_token";
+
+const loadPersistedAccessToken = () => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    return window.sessionStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+  } catch (error) {
+    return null;
+  }
+};
+
+let accessToken = loadPersistedAccessToken();
 let isRefreshing = false;
 let refreshSubscribers = [];
 const AUTH_EVENT_KEY = "auth:event";
@@ -48,12 +62,26 @@ const onRefreshFailed = () => {
 
 export const setAccessToken = (token) => {
   accessToken = token;
+
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    if (token) {
+      window.sessionStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, token);
+      return;
+    }
+
+    window.sessionStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+  } catch (error) {
+  }
 };
 
 export const getAccessToken = () => accessToken;
 
 export const clearAccessToken = () => {
-  accessToken = null;
+  setAccessToken(null);
 };
 
 export const clearAuthStorage = () => {
