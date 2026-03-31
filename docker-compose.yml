@@ -77,7 +77,7 @@ services:
     image: nginx:latest
     container_name: mfp_nginx
     ports:
-      - "8080:80"
+      - "80:80"
     volumes:
       - ./mfp_backend/nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./mfp_backend:/app
