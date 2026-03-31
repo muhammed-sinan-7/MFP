@@ -51,8 +51,8 @@ export default function VerifyOtp() {
         email,
         otp: data.otp,
       });
-      const { access, refresh } = response.data;
-      login({ access, refresh });
+      const { access, id, email } = response.data;
+      login({ access, id, email });
       sessionStorage.removeItem("otpEmail");
       navigate("/onboarding");
     } catch (error) {

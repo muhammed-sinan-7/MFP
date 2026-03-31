@@ -1,11 +1,32 @@
 import axios from "axios";
 
+const API_BASE = import.meta.env.VITE_API_BASE;
+
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE,
+  baseURL: API_BASE,
+  withCredentials: true,
 });
 
+let accessToken = null;
 let isRefreshing = false;
 let refreshSubscribers = [];
+const AUTH_EVENT_KEY = "auth:event";
+
+const broadcastAuthEvent = (type) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(new CustomEvent("auth:event", { detail: { type } }));
+
+  try {
+    window.localStorage.setItem(
+      AUTH_EVENT_KEY,
+      JSON.stringify({ type, ts: Date.now() }),
+    );
+  } catch (error) {
+  }
+};
 
 
 const subscribeTokenRefresh = (callback) => {
@@ -20,14 +41,40 @@ const onRefreshed = (newAccessToken) => {
 
 
 const onRefreshFailed = () => {
+  refreshSubscribers.forEach((callback) => callback(null));
   refreshSubscribers = [];
+  broadcastAuthEvent("logout");
+};
+
+export const setAccessToken = (token) => {
+  accessToken = token;
+};
+
+export const getAccessToken = () => accessToken;
+
+export const clearAccessToken = () => {
+  accessToken = null;
+};
+
+export const clearAuthStorage = () => {
+  clearAccessToken();
+};
+
+export const refreshAccessToken = async () => {
+  const response = await axios.post(
+    `${API_BASE}/auth/token/refresh/`,
+    {},
+    { withCredentials: true },
+  );
+
+  const newAccessToken = response.data.access;
+  setAccessToken(newAccessToken);
+  return newAccessToken;
 };
 
 
 
 API.interceptors.request.use((config) => {
-  const accessToken = localStorage.getItem("accessToken");
-
   const publicEndpoints = [
     "/auth/register/",
     "/auth/login/",
@@ -38,9 +85,7 @@ API.interceptors.request.use((config) => {
     "/industries/",
   ];
 
-  const isPublic = publicEndpoints.some((url) =>
-    config.url?.includes(url)
-  );
+  const isPublic = publicEndpoints.some((url) => config.url?.includes(url));
 
   if (accessToken && !isPublic) {
     config.headers.Authorization = `Bearer ${accessToken}`;
@@ -57,7 +102,7 @@ API.interceptors.response.use(
     const originalRequest = error.config;
 
     
-    if (!error.response) {
+    if (!error.response || !originalRequest) {
       return Promise.reject(error);
     }
 
@@ -65,19 +110,12 @@ API.interceptors.response.use(
     if (
       error.response.status !== 401 ||
       originalRequest._retry ||
-      originalRequest.url.includes("/auth/token/refresh/")
+      originalRequest.url?.includes("/auth/token/refresh/")
     ) {
       return Promise.reject(error);
     }
 
     originalRequest._retry = true;
-
-    const refreshToken = localStorage.getItem("refreshToken");
-
-    if (!refreshToken) {
-      logoutUser();
-      return Promise.reject(error);
-    }
 
     
     if (isRefreshing) {
@@ -97,37 +135,20 @@ API.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_BASE}/auth/token/refresh/`,
-        { refresh: refreshToken }
-      );
-
-      const newAccessToken = response.data.access;
-
-      
-      localStorage.setItem("accessToken", newAccessToken);
-
-   
-      API.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
-
-   
+      const newAccessToken = await refreshAccessToken();
       onRefreshed(newAccessToken);
-
-      isRefreshing = false;
-
-    
       originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
       return API(originalRequest);
 
     } catch (refreshError) {
-      isRefreshing = false;
+      clearAuthStorage();
 
       // ❌ reject queued requests
       onRefreshFailed();
 
-      logoutUser();
-
       return Promise.reject(refreshError);
+    } finally {
+      isRefreshing = false;
     }
   }
 );
@@ -135,18 +156,14 @@ API.interceptors.response.use(
 
 
 export async function logoutUser() {
-  const refresh = localStorage.getItem("refreshToken");
-
   try {
-    if (refresh) {
-      await API.post("/auth/logout/", { refresh });
-    }
+    await API.post("/auth/logout/");
   } catch (err) {
-
+  } finally {
+    clearAuthStorage();
+    broadcastAuthEvent("logout");
+    window.location.href = "/login";
   }
-
-  localStorage.clear();
-  window.location.href = "/login";
 }
 
 export default API;

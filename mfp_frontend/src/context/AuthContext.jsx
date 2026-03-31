@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import {
+  clearAuthStorage,
+  refreshAccessToken,
+  setAccessToken,
+} from "../services/api";
+import { getCurrentUser } from "../services/authService";
 
 const AuthContext = createContext();
 
@@ -6,40 +12,119 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const syncCurrentUser = async () => {
+    const { data } = await getCurrentUser();
+    const nextUser = {
+      isAuthenticated: true,
+      id: data.id,
+      email: data.email,
+      orgId: data.org_id,
+      orgName: data.org_name,
+      role: data.role,
+    };
+    setUser(nextUser);
+    return nextUser;
+  };
+
   useEffect(() => {
-    const access = localStorage.getItem("accessToken");
-    const orgId = localStorage.getItem("orgId");
+    const initializeAuth = async () => {
+      try {
+        await refreshAccessToken();
+        await syncCurrentUser();
+      } catch (error) {
+        clearAuthStorage();
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    if (access) {
-      setUser({
-        isAuthenticated: true,
-        orgId,
-      });
-    }
-
-    setLoading(false);
+    initializeAuth();
   }, []);
 
-  const login = ({ access, refresh, org }) => {
-    localStorage.setItem("accessToken", access);
-    localStorage.setItem("refreshToken", refresh);
-
-    if (org) {
-      localStorage.setItem("orgId", org.id);
-      localStorage.setItem("orgName", org.name);
-      localStorage.setItem("role", org.role);
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
     }
 
-    setUser({ isAuthenticated: true });
+    const handleAuthEvent = (event) => {
+      if (event.detail?.type === "logout") {
+        clearAuthStorage();
+        setUser(null);
+      }
+    };
+
+    const handleStorage = (event) => {
+      if (!event.key || event.key !== "auth:event" || !event.newValue) {
+        return;
+      }
+
+      try {
+        const payload = JSON.parse(event.newValue);
+        if (payload.type === "logout") {
+          clearAuthStorage();
+          setUser(null);
+        }
+      } catch (error) {
+      }
+    };
+
+    window.addEventListener("auth:event", handleAuthEvent);
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener("auth:event", handleAuthEvent);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      return undefined;
+    }
+
+    const intervalId = window.setInterval(async () => {
+      try {
+        await refreshAccessToken();
+        await syncCurrentUser();
+      } catch (error) {
+        clearAuthStorage();
+        setUser(null);
+      }
+    }, 10 * 60 * 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [user]);
+
+  const login = ({ access, id, email, org }) => {
+    setAccessToken(access);
+
+    setUser({
+      isAuthenticated: true,
+      id: id ?? null,
+      email: email ?? null,
+      orgId: org?.id ?? null,
+      orgName: org?.name ?? null,
+      role: org?.role ?? null,
+    });
+  };
+
+  const setOrganization = (org) => {
+    setUser((prev) => ({
+      ...(prev ?? { isAuthenticated: true }),
+      orgId: org.id,
+      orgName: org.name ?? null,
+      role: org.role ?? null,
+    }));
   };
 
   const logout = () => {
-    localStorage.clear();
+    clearAuthStorage();
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, setOrganization }}>
       {children}
     </AuthContext.Provider>
   );

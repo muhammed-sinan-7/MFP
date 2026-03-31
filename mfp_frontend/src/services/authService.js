@@ -13,6 +13,9 @@ export const verifyOtp = (data) =>
 export const loginUser = (data) =>
   API.post("auth/login/", data);
 
+export const getCurrentUser = () =>
+  API.get("auth/me/");
+
 export const requestPasswordReset = (data) =>
   API.post("auth/request-password-reset/", data);
 

@@ -11,9 +11,11 @@ import {
 } from "@heroicons/react/24/outline";
 import { toast } from "sonner";
 import { BRAND_LOGO, BRAND_NAME } from "../config/brand";
+import { useAuth } from "../context/AuthContext";
 
 export default function Onboarding() {
   const navigate = useNavigate();
+  const { setOrganization } = useAuth();
   const [industries, setIndustries] = useState([]);
   const [loadingIndustries, setLoadingIndustries] = useState(true);
 
@@ -42,8 +44,11 @@ export default function Onboarding() {
   const onSubmit = async (data) => {
     try {
       const response = await createOrganization(data);
-      const orgId = response.data.id;
-      localStorage.setItem("orgId", orgId);
+      setOrganization({
+        id: response.data.id,
+        name: response.data.name ?? data.name,
+        role: response.data.role ?? "owner",
+      });
       navigate("/dashboard");
     } catch {
       toast.error("Organization creation failed");

@@ -38,18 +38,15 @@ export default function Login() {
         return;
       }
 
-      const { access, refresh, org_id, org_name, role } = res;
+      const { access, id, email, org_id, org_name, role } = res;
 
-      if (org_id) {
-        login({
-          access,
-          refresh,
-          org: org_id ? { id: org_id, name: org_name, role } : undefined,
-        });
-        navigate(org_id ? "/dashboard" : "/onboarding");
-      } else {
-        navigate("/onboarding");
-      }
+      login({
+        access,
+        id,
+        email,
+        org: org_id ? { id: org_id, name: org_name, role } : undefined,
+      });
+      navigate(org_id ? "/dashboard" : "/onboarding");
     } catch (error) {
       const msg = error.response?.data?.error;
 

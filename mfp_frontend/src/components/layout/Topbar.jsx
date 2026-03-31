@@ -1,11 +1,12 @@
 
 import { useEffect, useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 import { getOrgSettings } from "../../services/settingsService";
 
 function Topbar(){
   const [form,setForm] = useState([])
-  const orgName = localStorage.getItem("orgName");
-  const role = localStorage.getItem("role");
+  const { user } = useAuth();
+  const orgName = user?.orgName;
 
   useEffect(()=>{
     fetchSettings()

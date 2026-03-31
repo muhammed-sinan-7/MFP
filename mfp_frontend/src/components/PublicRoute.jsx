@@ -1,11 +1,16 @@
 import { Navigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import AuthLoadingScreen from "./AuthLoadingScreen";
 
 function PublicRoute({ children }) {
-  const accessToken = localStorage.getItem("accessToken");
-  const orgId = localStorage.getItem("orgId");
+  const { user, loading } = useAuth();
 
-  if (accessToken) {
-    if (!orgId) {
+  if (loading) {
+    return <AuthLoadingScreen />;
+  }
+
+  if (user?.isAuthenticated) {
+    if (!user.orgId) {
       return <Navigate to="/onboarding" replace />;
     }
 
