@@ -14,7 +14,7 @@ function PublicRoute({ children }) {
       return <Navigate to="/onboarding" replace />;
     }
 
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/overview" replace />;
   }
 
   return children;

@@ -51,7 +51,7 @@ export default function Login() {
         org: org_id ? { id: org_id, name: org_name, role } : undefined,
         rememberMe,
       });
-      navigate(org_id ? "/dashboard" : "/onboarding");
+      navigate(org_id ? "/overview" : "/onboarding");
     } catch (error) {
       const msg = error.response?.data?.error;
 

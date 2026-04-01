@@ -137,7 +137,7 @@ export const refreshAccessToken = async () => {
 
     const newAccessToken = response.data.access;
     setAccessToken(newAccessToken, { persist });
-    return newAccessToken;
+    return response.data;
   } catch (error) {
     if (error.response?.status === 401) {
       clearAccessToken();
@@ -212,7 +212,8 @@ API.interceptors.response.use(
 
     try {
       const hadAccessToken = Boolean(accessToken);
-      const newAccessToken = await refreshAccessToken();
+      const refreshPayload = await refreshAccessToken();
+      const newAccessToken = refreshPayload?.access;
       if (!newAccessToken) {
         clearAuthStorage();
         if (hadAccessToken) {

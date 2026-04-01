@@ -49,7 +49,7 @@ export default function Onboarding() {
         name: response.data.name ?? data.name,
         role: response.data.role ?? "owner",
       });
-      navigate("/dashboard");
+      navigate("/overview");
     } catch {
       toast.error("Organization creation failed");
     }

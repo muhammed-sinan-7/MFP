@@ -10,8 +10,14 @@ export const getCachedSocialList = () => {
   }
 
   try {
-    const raw = window.sessionStorage.getItem(ACCOUNTS_CACHE_KEY);
-    const ts = Number(window.sessionStorage.getItem(ACCOUNTS_CACHE_TS_KEY) || 0);
+    const raw =
+      window.sessionStorage.getItem(ACCOUNTS_CACHE_KEY) ||
+      window.localStorage.getItem(ACCOUNTS_CACHE_KEY);
+    const ts = Number(
+      window.sessionStorage.getItem(ACCOUNTS_CACHE_TS_KEY) ||
+        window.localStorage.getItem(ACCOUNTS_CACHE_TS_KEY) ||
+        0
+    );
     const data = raw ? JSON.parse(raw) : null;
     return {
       data,
@@ -30,6 +36,8 @@ export const cacheSocialList = (data) => {
   try {
     window.sessionStorage.setItem(ACCOUNTS_CACHE_KEY, JSON.stringify(data));
     window.sessionStorage.setItem(ACCOUNTS_CACHE_TS_KEY, String(Date.now()));
+    window.localStorage.setItem(ACCOUNTS_CACHE_KEY, JSON.stringify(data));
+    window.localStorage.setItem(ACCOUNTS_CACHE_TS_KEY, String(Date.now()));
   } catch (error) {
   }
 };
@@ -42,6 +50,8 @@ export const clearSocialListCache = () => {
   try {
     window.sessionStorage.removeItem(ACCOUNTS_CACHE_KEY);
     window.sessionStorage.removeItem(ACCOUNTS_CACHE_TS_KEY);
+    window.localStorage.removeItem(ACCOUNTS_CACHE_KEY);
+    window.localStorage.removeItem(ACCOUNTS_CACHE_TS_KEY);
   } catch (error) {
   }
 };

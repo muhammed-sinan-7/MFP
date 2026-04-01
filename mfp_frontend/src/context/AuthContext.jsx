@@ -39,6 +39,21 @@ const persistUser = (nextUser) => {
   }
 };
 
+const buildUserFromAuthPayload = (payload) => {
+  if (!payload) {
+    return null;
+  }
+
+  return {
+    isAuthenticated: true,
+    id: payload.id ?? null,
+    email: payload.email ?? null,
+    orgId: payload.org_id ?? null,
+    orgName: payload.org_name ?? null,
+    role: payload.role ?? null,
+  };
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => loadStoredUser());
   const [loading, setLoading] = useState(true);
@@ -55,14 +70,7 @@ export const AuthProvider = ({ children }) => {
 
   const syncCurrentUser = async () => {
     const { data } = await getCurrentUser();
-    const nextUser = {
-      isAuthenticated: true,
-      id: data.id,
-      email: data.email,
-      orgId: data.org_id,
-      orgName: data.org_name,
-      role: data.role,
-    };
+    const nextUser = buildUserFromAuthPayload(data);
     setUser(nextUser);
     persistUser(nextUser);
     return nextUser;
@@ -102,14 +110,20 @@ export const AuthProvider = ({ children }) => {
       }
 
       try {
-        const refreshedAccessToken = await refreshAccessToken();
-        if (!refreshedAccessToken) {
+        const refreshPayload = await refreshAccessToken();
+        if (!refreshPayload?.access) {
           setUser(null);
           persistUser(null);
           return;
         }
 
-        await syncCurrentUser();
+        if (refreshPayload.id) {
+          const nextUser = buildUserFromAuthPayload(refreshPayload);
+          setUser(nextUser);
+          persistUser(nextUser);
+        } else {
+          await syncCurrentUser();
+        }
       } catch (error) {
         clearAuthStorage();
         setUser(null);
@@ -167,12 +181,18 @@ export const AuthProvider = ({ children }) => {
 
     const intervalId = window.setInterval(async () => {
       try {
-        const refreshedAccessToken = await refreshAccessToken();
-        if (!refreshedAccessToken) {
+        const refreshPayload = await refreshAccessToken();
+        if (!refreshPayload?.access) {
           clearAuthStorage();
           setUser(null);
           persistUser(null);
           return;
+        }
+
+        if (refreshPayload.id) {
+          const nextUser = buildUserFromAuthPayload(refreshPayload);
+          setUser(nextUser);
+          persistUser(nextUser);
         }
       } catch (error) {
         clearAuthStorage();
