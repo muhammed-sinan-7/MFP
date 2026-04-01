@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { useState } from "react";
 import {
   HomeIcon,
   CalendarIcon,
@@ -13,7 +14,10 @@ import {
 
 import { BarChart3 } from "lucide-react";
 import { BRAND_LOGO, BRAND_NAME } from "../../config/brand";
+import { logoutUser } from "../../services/api";
 function Sidebar() {
+  const [loggingOut, setLoggingOut] = useState(false);
+
   const navItems = [
     { name: "Dashboard", icon: HomeIcon, path: "/overview" },
     { name: "Connected Accounts", icon: LinkIcon, path: "/accounts" },
@@ -66,13 +70,15 @@ function Sidebar() {
 
       <div className="p-4 border-t border-gray-200">
         <button
-          onClick={() => {
-            localStorage.clear();
-            window.location.href = "/login";
+          onClick={async () => {
+            if (loggingOut) return;
+            setLoggingOut(true);
+            await logoutUser();
           }}
+          disabled={loggingOut}
           className="text-sm text-gray-500 hover:text-gray-800 transition"
         >
-          Logout
+          {loggingOut ? "Logging out..." : "Logout"}
         </button>
       </div>
     </div>

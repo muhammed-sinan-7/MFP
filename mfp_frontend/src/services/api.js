@@ -10,13 +10,25 @@ const API = axios.create({
 const ACCESS_TOKEN_STORAGE_KEY = "auth:access_token";
 const ACCESS_TOKEN_STORAGE_MODE_KEY = "auth:access_token_mode";
 
+const getAccessTokenPersistenceMode = () => {
+  if (typeof window === "undefined") {
+    return "session";
+  }
+
+  try {
+    return window.localStorage.getItem(ACCESS_TOKEN_STORAGE_MODE_KEY) || "session";
+  } catch (error) {
+    return "session";
+  }
+};
+
 const getTokenStorage = () => {
   if (typeof window === "undefined") {
     return null;
   }
 
   try {
-    const mode = window.localStorage.getItem(ACCESS_TOKEN_STORAGE_MODE_KEY);
+    const mode = getAccessTokenPersistenceMode();
     return mode === "local" ? window.localStorage : window.sessionStorage;
   } catch (error) {
     return window.sessionStorage;
@@ -116,6 +128,7 @@ export const clearAuthStorage = () => {
 
 export const refreshAccessToken = async () => {
   try {
+    const persist = getAccessTokenPersistenceMode() === "local";
     const response = await axios.post(
       `${API_BASE}/auth/token/refresh/`,
       {},
@@ -123,7 +136,7 @@ export const refreshAccessToken = async () => {
     );
 
     const newAccessToken = response.data.access;
-    setAccessToken(newAccessToken);
+    setAccessToken(newAccessToken, { persist });
     return newAccessToken;
   } catch (error) {
     if (error.response?.status === 401) {

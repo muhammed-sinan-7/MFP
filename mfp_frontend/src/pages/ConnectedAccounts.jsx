@@ -41,6 +41,26 @@ function ConnectedAccounts() {
   }, [fetchAccounts]);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const socialError = params.get("social_error");
+
+    if (!socialError) {
+      return;
+    }
+
+    if (socialError === "linkedin_profile_timeout") {
+      toast.warning("LinkedIn was slow to respond. If the account connected, it will appear below.");
+    } else if (socialError === "linkedin_callback_failed") {
+      toast.error("LinkedIn connection did not complete. Please try again.");
+    }
+
+    params.delete("social_error");
+    const nextQuery = params.toString();
+    const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}`;
+    window.history.replaceState({}, "", nextUrl);
+  }, []);
+
+  useEffect(() => {
     const onFocus = () => {
       fetchAccounts();
     };
