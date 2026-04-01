@@ -48,7 +48,9 @@ function ConnectedAccounts() {
       return;
     }
 
-    if (socialError === "linkedin_profile_timeout") {
+    if (socialError === "linkedin_cancelled") {
+      toast.info("LinkedIn connection was cancelled.");
+    } else if (socialError === "linkedin_profile_timeout") {
       toast.warning("LinkedIn was slow to respond. If the account connected, it will appear below.");
     } else if (socialError === "linkedin_callback_failed") {
       toast.error("LinkedIn connection did not complete. Please try again.");
