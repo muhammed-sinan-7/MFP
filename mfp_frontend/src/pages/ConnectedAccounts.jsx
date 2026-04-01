@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import {
+  cacheSocialList,
+  getCachedSocialList,
   socialList,
   refreshAccount,
   disconnectAccount,
@@ -18,9 +20,10 @@ function ConnectedAccounts() {
   const [syncingMeta, setSyncingMeta] = useState(false);
 
   const fetchAccounts = useCallback(async () => {
-    try {
-      const data = await socialList();
-      const list = data.data || [];
+    const cached = getCachedSocialList();
+
+    if (cached.data) {
+      const list = cached.data || [];
       setAccounts(list);
       setError(null);
 
@@ -29,8 +32,29 @@ function ConnectedAccounts() {
         (acc.publishing_targets || []).some((target) => target.provider === "instagram"),
       );
       setSyncingMeta(hasMeta && !hasInstagramTarget);
+
+      if (cached.fresh) {
+        setLoading(false);
+        return;
+      }
+    }
+
+    try {
+      const data = await socialList();
+      const list = data.data || [];
+      setAccounts(list);
+      setError(null);
+      cacheSocialList(list);
+
+      const hasMeta = list.some((acc) => acc.provider === "meta");
+      const hasInstagramTarget = list.some((acc) =>
+        (acc.publishing_targets || []).some((target) => target.provider === "instagram"),
+      );
+      setSyncingMeta(hasMeta && !hasInstagramTarget);
     } catch {
-      setError("Failed to load accounts");
+      if (!cached.data) {
+        setError("Failed to load accounts");
+      }
     } finally {
       setLoading(false);
     }

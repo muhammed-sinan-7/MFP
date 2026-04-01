@@ -81,8 +81,11 @@ export const AuthProvider = ({ children }) => {
       }
 
       const storedUser = loadStoredUser();
-      if (storedUser?.isAuthenticated) {
+      const hasStoredSession = Boolean(storedUser?.isAuthenticated);
+
+      if (hasStoredSession) {
         setUser(storedUser);
+        // Let the app render immediately, then reconcile auth in background.
         setLoading(false);
       }
 

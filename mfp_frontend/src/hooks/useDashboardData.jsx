@@ -1,41 +1,79 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
 
+const DASHBOARD_CACHE_KEY = "dashboard_full_cache";
+const DASHBOARD_CACHE_TS_KEY = "dashboard_full_cache_ts";
+const DASHBOARD_TTL_MS = 5 * 60 * 1000;
+let dashboardInFlight = null;
+
+const readDashboardCache = () => {
+  if (typeof window === "undefined") {
+    return { data: null, ts: 0 };
+  }
+
+  try {
+    const raw = window.sessionStorage.getItem(DASHBOARD_CACHE_KEY);
+    const ts = Number(window.sessionStorage.getItem(DASHBOARD_CACHE_TS_KEY) || 0);
+    return {
+      data: raw ? JSON.parse(raw) : null,
+      ts,
+    };
+  } catch (error) {
+    return { data: null, ts: 0 };
+  }
+};
+
+const writeDashboardCache = (data) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.sessionStorage.setItem(DASHBOARD_CACHE_KEY, JSON.stringify(data));
+    window.sessionStorage.setItem(DASHBOARD_CACHE_TS_KEY, String(Date.now()));
+  } catch (error) {
+  }
+};
+
 export function useDashboardData() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const initialCache = readDashboardCache();
+  const [data, setData] = useState(initialCache.data);
+  const [loading, setLoading] = useState(!initialCache.data);
   const [error, setError] = useState(null);
 
   const loadDashboard = async (force = false) => {
-    const cacheKey = "dashboard_full_cache";
-    const cacheTsKey = "dashboard_full_cache_ts";
+    const cached = readDashboardCache();
     const timestampNow = Date.now();
 
-    if (!force) {
-      const cached = sessionStorage.getItem(cacheKey);
-      const cachedTs = Number(sessionStorage.getItem(cacheTsKey) || 0);
-
-      if (cached && timestampNow - cachedTs < 30 * 1000) {
-        setData(JSON.parse(cached));
+    if (cached.data) {
+      setData(cached.data);
+      setLoading(false);
+      if (!force && timestampNow - cached.ts < DASHBOARD_TTL_MS) {
         setLoading(false);
         return;
       }
     }
 
-    setLoading(true);
+    if (!cached.data) {
+      setLoading(true);
+    }
     setError(null);
 
     try {
-      const res = await API.get("/analytics/dashboard/full/", {
-        params: force ? { force: 1 } : undefined,
-      });
+      dashboardInFlight =
+        dashboardInFlight ||
+        API.get("/analytics/dashboard/full/", {
+          params: force ? { force: 1 } : undefined,
+        });
+
+      const res = await dashboardInFlight;
       setData(res.data);
-      sessionStorage.setItem(cacheKey, JSON.stringify(res.data));
-      sessionStorage.setItem(cacheTsKey, String(Date.now()));
+      writeDashboardCache(res.data);
     } catch (err) {
       console.error(err);
       setError("Failed to load dashboard data.");
     } finally {
+      dashboardInFlight = null;
       setLoading(false);
     }
   };
