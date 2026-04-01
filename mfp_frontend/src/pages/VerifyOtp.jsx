@@ -7,6 +7,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { ShieldCheckIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "../context/AuthContext";
 import { BRAND_LOGO, BRAND_NAME } from "../config/brand";
+import { getUserFacingError } from "../services/errorUtils";
 
 export default function VerifyOtp() {
   const navigate = useNavigate();
@@ -63,7 +64,7 @@ export default function VerifyOtp() {
           ? Object.values(res).flat().find((value) => typeof value === "string")
           : null;
 
-      setServerError(res?.error || serializerError || "Verification failed");
+      setServerError(res?.error || serializerError || getUserFacingError(error, "Verification failed."));
       if (res?.attempts_left !== undefined) setAttemptsLeft(res.attempts_left);
       if (res?.locked) setIsLocked(true);
     }
@@ -163,7 +164,7 @@ export default function VerifyOtp() {
                     setIsLocked(false);
                     setCooldown(60);
                   } catch (error) {
-                    setServerError(error.response?.data?.error || "Failed to resend OTP");
+                    setServerError(getUserFacingError(error, "Failed to resend OTP."));
                   }
                 }}
                 className={`font-bold transition-colors ${

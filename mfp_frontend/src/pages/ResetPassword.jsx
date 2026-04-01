@@ -11,6 +11,7 @@ import {
 import { toast } from "sonner";
 import { resetPasswordSchema } from "../validation/resetPasswordSchema";
 import { resetPassword } from "../services/authService";
+import { getUserFacingError } from "../services/errorUtils";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ export default function ResetPassword() {
       toast.success("Password reset successful. Please login.");
       navigate("/login");
     } catch (error) {
-      toast.error(error.response?.data?.error || "Failed to reset password");
+      toast.error(getUserFacingError(error, "Failed to reset password."));
     }
   };
 

@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { registerSchema } from "../validation/registerSchema";
 import { registerUser } from "../services/authService";
 import { BRAND_LOGO, BRAND_NAME } from "../config/brand";
+import { getUserFacingError } from "../services/errorUtils";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -36,7 +37,7 @@ export default function Register() {
       sessionStorage.setItem("otpEmail", data.email);
       navigate("/verify-otp", { state: { email: data.email } });
     } catch (error) {
-      toast.error(error.response?.data?.error || "Registration failed");
+      toast.error(getUserFacingError(error, "Registration failed. Please try again."));
     }
   };
 

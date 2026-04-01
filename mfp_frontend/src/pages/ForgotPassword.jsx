@@ -5,6 +5,7 @@ import { EnvelopeIcon } from "@heroicons/react/24/outline";
 import { toast } from "sonner";
 import { forgotPasswordSchema } from "../validation/forgotPasswordSchema";
 import { requestPasswordReset } from "../services/authService";
+import { getUserFacingError } from "../services/errorUtils";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ export default function ForgotPassword() {
       toast.success("If this email exists, a reset OTP has been sent.");
       navigate("/reset-password", { state: { email: data.email } });
     } catch (error) {
-      toast.error(error.response?.data?.error || "Failed to request reset");
+      toast.error(getUserFacingError(error, "Failed to request reset."));
     }
   };
 

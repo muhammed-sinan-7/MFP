@@ -13,6 +13,7 @@ import { loginSchema } from "../validation/loginSchema";
 import { loginUser } from "../services/authService";
 import { useAuth } from "../context/AuthContext";
 import { BRAND_LOGO, BRAND_NAME } from "../config/brand";
+import { getUserFacingError } from "../services/errorUtils";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -59,10 +60,8 @@ export default function Login() {
 
       if (msg === "Account locked") {
         toast.error("Your account is temporarily locked. Try again later.");
-      } else if (error.response?.status === 429) {
-        toast.error("Too many requests. Please wait.");
       } else {
-        toast.error(msg || "Login failed");
+        toast.error(getUserFacingError(error, "Login failed. Please try again."));
       }
     }
   };

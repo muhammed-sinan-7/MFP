@@ -1,10 +1,25 @@
 import axios from "axios";
 
 const API_BASE = import.meta.env.VITE_API_BASE;
+const REQUEST_TIMEOUT_MS = 15000;
+
+const PUBLIC_ENDPOINTS = [
+  "/auth/register/",
+  "/auth/login/",
+  "/auth/verify-email-otp/",
+  "/auth/request-password-reset/",
+  "/auth/reset-password/",
+  "/auth/token/refresh/",
+  "/industries/",
+];
+
+const isPublicEndpoint = (url = "") =>
+  PUBLIC_ENDPOINTS.some((publicUrl) => url?.includes(publicUrl));
 
 const API = axios.create({
   baseURL: API_BASE,
   withCredentials: true,
+  timeout: REQUEST_TIMEOUT_MS,
 });
 
 const ACCESS_TOKEN_STORAGE_KEY = "auth:access_token";
@@ -132,7 +147,7 @@ export const refreshAccessToken = async () => {
     const response = await axios.post(
       `${API_BASE}/auth/token/refresh/`,
       {},
-      { withCredentials: true },
+      { withCredentials: true, timeout: REQUEST_TIMEOUT_MS },
     );
 
     const newAccessToken = response.data.access;
@@ -151,17 +166,7 @@ export const refreshAccessToken = async () => {
 
 
 API.interceptors.request.use((config) => {
-  const publicEndpoints = [
-    "/auth/register/",
-    "/auth/login/",
-    "/auth/verify-email-otp/",
-    "/auth/request-password-reset/",
-    "/auth/reset-password/",
-    "/auth/token/refresh/",
-    "/industries/",
-  ];
-
-  const isPublic = publicEndpoints.some((url) => config.url?.includes(url));
+  const isPublic = isPublicEndpoint(config.url);
 
   if (accessToken && !isPublic) {
     config.headers.Authorization = `Bearer ${accessToken}`;
@@ -186,7 +191,8 @@ API.interceptors.response.use(
     if (
       error.response.status !== 401 ||
       originalRequest._retry ||
-      originalRequest.url?.includes("/auth/token/refresh/")
+      originalRequest.url?.includes("/auth/token/refresh/") ||
+      isPublicEndpoint(originalRequest.url)
     ) {
       return Promise.reject(error);
     }
