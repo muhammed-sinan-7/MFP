@@ -42,7 +42,7 @@ export default function Login() {
         return;
       }
 
-      const { access, id, email, org_id, org_name, role } = res;
+      const { access, id, email, org_id, org_name, role, is_staff, is_superuser } = res;
 
       login({
         access,
@@ -50,6 +50,8 @@ export default function Login() {
         email,
         org: org_id ? { id: org_id, name: org_name, role } : undefined,
         rememberMe,
+        isStaff: is_staff,
+        isSuperuser: is_superuser,
       });
       navigate(org_id ? "/overview" : "/onboarding");
     } catch (error) {

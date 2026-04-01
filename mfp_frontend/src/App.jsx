@@ -8,6 +8,7 @@ import Onboarding from "./pages/Onboarding";
 import DashboardLayout from "./layouts/DashboardLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
+import AdminRoute from "./components/AdminRoute";
 
 import Overview from "./features/dashboard/Overview";
 import "./App.css";
@@ -23,6 +24,7 @@ import Analytics from "./pages/Analytics";
 // import CreateSchedulePage from "./pages/CreateSchedulePage";
 import News from "./pages/News";
 import Settings from "./pages/Settings";
+import AdminPanel from "./pages/AdminPanel";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import LegalConsentBanner from "./components/legal/LegalConsentBanner";
@@ -120,6 +122,14 @@ function App() {
             <Route path="/recycle-bin" element={<RecycleBinPage />} />
             <Route path="/settings" element={<Settings/>} />
             <Route path="/feeds" element={<News />} />
+            <Route
+              path="/admin-panel"
+              element={
+                <AdminRoute>
+                  <AdminPanel />
+                </AdminRoute>
+              }
+            />
           </Route>
         </Routes>
       </Router>

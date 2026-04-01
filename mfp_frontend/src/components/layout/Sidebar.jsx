@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 import {
   HomeIcon,
   CalendarIcon,
@@ -17,6 +18,7 @@ import { BRAND_LOGO, BRAND_NAME } from "../../config/brand";
 import { logoutUser } from "../../services/api";
 function Sidebar() {
   const [loggingOut, setLoggingOut] = useState(false);
+  const { user } = useAuth();
 
   const navItems = [
     { name: "Dashboard", icon: HomeIcon, path: "/overview" },
@@ -34,6 +36,10 @@ function Sidebar() {
     { name: "Recycle Bin", icon: TrashIcon, path: "/recycle-bin" },
     { name: "Settings", icon: Cog6ToothIcon, path: "/settings" },
   ];
+
+  if (user?.isStaff || user?.isSuperuser) {
+    navItems.push({ name: "Admin Panel", icon: UsersIcon, path: "/admin-panel" });
+  }
 
   return (
     <div className="w-64 bg-white border-r border-gray-200 flex flex-col justify-between">

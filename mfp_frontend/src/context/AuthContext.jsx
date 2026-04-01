@@ -51,6 +51,8 @@ const buildUserFromAuthPayload = (payload) => {
     orgId: payload.org_id ?? null,
     orgName: payload.org_name ?? null,
     role: payload.role ?? null,
+    isStaff: Boolean(payload.is_staff),
+    isSuperuser: Boolean(payload.is_superuser),
   };
 };
 
@@ -204,7 +206,15 @@ export const AuthProvider = ({ children }) => {
     return () => window.clearInterval(intervalId);
   }, [user]);
 
-  const login = ({ access, id, email, org, rememberMe = false }) => {
+  const login = ({
+    access,
+    id,
+    email,
+    org,
+    rememberMe = false,
+    isStaff = false,
+    isSuperuser = false,
+  }) => {
     setAccessToken(access, { persist: rememberMe });
 
     const nextUser = {
@@ -214,6 +224,8 @@ export const AuthProvider = ({ children }) => {
       orgId: org?.id ?? null,
       orgName: org?.name ?? null,
       role: org?.role ?? null,
+      isStaff: Boolean(isStaff),
+      isSuperuser: Boolean(isSuperuser),
     };
 
     setUser(nextUser);
