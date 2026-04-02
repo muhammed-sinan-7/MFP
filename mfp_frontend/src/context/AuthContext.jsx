@@ -9,6 +9,7 @@ import { getCurrentUser } from "../services/authService";
 
 const AuthContext = createContext();
 const AUTH_USER_STORAGE_KEY = "auth:user";
+const AUTH_USER_STORAGE_MODE_KEY = "auth:user_mode";
 
 const loadStoredUser = () => {
   if (typeof window === "undefined") {
@@ -16,25 +17,42 @@ const loadStoredUser = () => {
   }
 
   try {
-    const raw = window.localStorage.getItem(AUTH_USER_STORAGE_KEY);
+    const mode = window.localStorage.getItem(AUTH_USER_STORAGE_MODE_KEY) || "local";
+    const storage = mode === "session" ? window.sessionStorage : window.localStorage;
+    const raw = storage.getItem(AUTH_USER_STORAGE_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch (error) {
     return null;
   }
 };
 
-const persistUser = (nextUser) => {
+const persistUser = (nextUser, options = {}) => {
   if (typeof window === "undefined") {
     return;
   }
 
   try {
     if (nextUser) {
-      window.localStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(nextUser));
+      const persist =
+        typeof options.persist === "boolean"
+          ? options.persist
+          : (window.localStorage.getItem(AUTH_USER_STORAGE_MODE_KEY) || "session") ===
+            "local";
+      const targetStorage = persist ? window.localStorage : window.sessionStorage;
+      const otherStorage = persist ? window.sessionStorage : window.localStorage;
+
+      targetStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(nextUser));
+      otherStorage.removeItem(AUTH_USER_STORAGE_KEY);
+      window.localStorage.setItem(
+        AUTH_USER_STORAGE_MODE_KEY,
+        persist ? "local" : "session",
+      );
       return;
     }
 
     window.localStorage.removeItem(AUTH_USER_STORAGE_KEY);
+    window.sessionStorage.removeItem(AUTH_USER_STORAGE_KEY);
+    window.localStorage.removeItem(AUTH_USER_STORAGE_MODE_KEY);
   } catch (error) {
   }
 };
@@ -59,6 +77,7 @@ const buildUserFromAuthPayload = (payload) => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => loadStoredUser());
   const [loading, setLoading] = useState(true);
+  const AUTH_BOOTSTRAP_TIMEOUT_MS = 8000;
   const publicPaths = [
     "/",
     "/login",
@@ -80,34 +99,46 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const initializeAuth = async () => {
+      let finished = false;
+      const timeoutId = window.setTimeout(() => {
+        if (!finished) {
+          setLoading(false);
+        }
+      }, AUTH_BOOTSTRAP_TIMEOUT_MS);
+
       const pathname = window.location.pathname;
       const isPublicPath = publicPaths.some(
         (path) => pathname === path || pathname.startsWith(`${path}/`),
       );
+      const storedUser = loadStoredUser();
+      const hasAccessToken = Boolean(getAccessToken());
+      const hasStoredSession = Boolean(storedUser?.isAuthenticated);
 
-      if (isPublicPath) {
+      // Keep anonymous public pages fast; only reconcile when there is session state.
+      if (isPublicPath && !hasStoredSession && !hasAccessToken) {
         setLoading(false);
         return;
       }
 
-      const storedUser = loadStoredUser();
-      const hasStoredSession = Boolean(storedUser?.isAuthenticated);
-
       if (hasStoredSession) {
         setUser(storedUser);
-        // Let the app render immediately, then reconcile auth in background.
-        setLoading(false);
       }
 
-      if (getAccessToken()) {
+      if (hasAccessToken) {
         try {
           await syncCurrentUser();
           setLoading(false);
           return;
         } catch (error) {
-          clearAuthStorage();
-          setUser(null);
-          persistUser(null);
+          const status = error?.response?.status;
+          if (status === 401) {
+            clearAuthStorage();
+            setUser(null);
+            persistUser(null);
+          } else if (hasStoredSession) {
+            setLoading(false);
+            return;
+          }
         }
       }
 
@@ -127,10 +158,15 @@ export const AuthProvider = ({ children }) => {
           await syncCurrentUser();
         }
       } catch (error) {
-        clearAuthStorage();
-        setUser(null);
-        persistUser(null);
+        const status = error?.response?.status;
+        if (status === 401) {
+          clearAuthStorage();
+          setUser(null);
+          persistUser(null);
+        }
       } finally {
+        finished = true;
+        window.clearTimeout(timeoutId);
         setLoading(false);
       }
     };
@@ -197,9 +233,11 @@ export const AuthProvider = ({ children }) => {
           persistUser(nextUser);
         }
       } catch (error) {
-        clearAuthStorage();
-        setUser(null);
-        persistUser(null);
+        if (error?.response?.status === 401) {
+          clearAuthStorage();
+          setUser(null);
+          persistUser(null);
+        }
       }
     }, 10 * 60 * 1000);
 
@@ -229,7 +267,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     setUser(nextUser);
-    persistUser(nextUser);
+    persistUser(nextUser, { persist: rememberMe });
   };
 
   const setOrganization = (org) => {

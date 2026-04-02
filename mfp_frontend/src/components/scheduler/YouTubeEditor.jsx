@@ -87,8 +87,8 @@ export default function YouTubeEditor({
   const isShort = videoMeta.duration > 0 && videoMeta.duration <= 60 && isPortrait;
 
   return (
-    <div className="flex gap-3 font-sans text-[#1D2226]">
-      <div className="w-72 h-100 rounded-xl p-6 border-gray-200 overflow-y-auto shrink-0 bg-white">
+    <div className="flex flex-col 2xl:flex-row gap-3 font-sans text-[#1D2226]">
+      <div className="w-full 2xl:w-72 rounded-xl p-4 sm:p-6 border border-gray-200 overflow-y-auto shrink-0 bg-white">
         <section className="mb-8">
           <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-4">
             Scheduling
@@ -156,7 +156,7 @@ export default function YouTubeEditor({
         </div>
       </div>
 
-      <div className="flex-1 bg-white overflow-y-auto ml-3 rounded-xl px-16 py-10">
+      <div className="flex-1 bg-white overflow-y-auto rounded-xl px-4 sm:px-6 lg:px-12 py-6 sm:py-8 lg:py-10 border border-gray-200">
         <div className="max-w-2xl mx-auto">
           <div className="flex justify-between items-start mb-8 gap-4">
             <div>
@@ -249,7 +249,7 @@ export default function YouTubeEditor({
         </div>
       </div>
 
-      <div className="w-[420px] ml-3 rounded-xl bg-[#F3F5F7] border-l border-gray-200 flex flex-col items-center py-12 px-6 overflow-y-auto">
+      <div className="hidden 2xl:flex w-[420px] rounded-xl bg-[#F3F5F7] border-l border-gray-200 flex-col items-center py-12 px-6 overflow-y-auto">
         <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-8">
           Live Post Preview
         </h3>

@@ -79,13 +79,13 @@ const Analytics = () => {
     <div className="w-full font-sans text-gray-900">
 
       {/* Navigation Tabs */}
-      <header className="flex justify-center items-center mb-6">
-        <nav className="flex justify-center items-center bg-gray-50 rounded-xl p-1 border border-gray-100">
+      <header className="mb-6">
+        <nav className="mx-auto flex w-full max-w-fit items-center bg-gray-50 rounded-xl p-1 border border-gray-100 overflow-x-auto">
           {["overview", "instagram", "linkedin", "youtube"].map((tab) => (
             <button
               key={tab}
               onClick={() => setPlatform(tab)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 capitalize ${
+              className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 capitalize whitespace-nowrap ${
                 platform === tab
                   ? "bg-white shadow-sm text-gray-900"
                   : "text-gray-500 hover:text-gray-700"

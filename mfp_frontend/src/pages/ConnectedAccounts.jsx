@@ -151,8 +151,8 @@ function ConnectedAccounts() {
     [accounts],
   );
 
-  if (loading) return <div className="p-8">Loading...</div>;
-  if (error) return <div className="p-8 text-red-500">{error}</div>;
+  if (loading) return <div className="p-4 sm:p-6 lg:p-8">Loading...</div>;
+  if (error) return <div className="p-4 sm:p-6 lg:p-8 text-red-500">{error}</div>;
 
   const healthy = flattenedTargets.filter(
     (t) => calculateTokenHealth(t.parentAccount.token_expires_at) > 60,
@@ -163,7 +163,7 @@ function ConnectedAccounts() {
   ).length;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-6 lg:space-y-8">
       <ConnectAccountModal
         isOpen={showModal}
         onClose={() => {
@@ -172,9 +172,9 @@ function ConnectedAccounts() {
         }}
       />
 
-      <div className="flex justify-between items-start">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
         <div>
-          <h1 className="text-2xl font-semibold">Connected Accounts</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold">Connected Accounts</h1>
           <p className="text-sm text-gray-500 mt-1">
             Manage your organization's social platform integrations.
           </p>
@@ -186,14 +186,14 @@ function ConnectedAccounts() {
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         <SummaryCard title="Healthy" value={healthy} />
         <SummaryCard title="Alerts" value={alerts} />
         <SummaryCard title="Total Profiles" value={flattenedTargets.length} />
         <SummaryCard title="Platforms" value={accounts.length} />
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
         {flattenedTargets.map((target) => {
           const tokenHealth = calculateTokenHealth(
             target.parentAccount.token_expires_at,
@@ -202,7 +202,7 @@ function ConnectedAccounts() {
           return (
             <div
               key={target.id}
-              className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm"
+              className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 lg:p-6 shadow-sm"
             >
               <div className="flex justify-between items-center mb-3">
                 <h3 className="font-medium">{target.display_name}</h3>
@@ -234,7 +234,7 @@ function ConnectedAccounts() {
                 </p>
               </div>
 
-              <div className="flex gap-3 mt-5">
+              <div className="flex gap-3 mt-5 flex-wrap">
                 <button
                   onClick={() => handleRefresh(target.parentAccount.id)}
                   className="text-sm text-gray-600 hover:text-gray-900"
@@ -259,7 +259,7 @@ function ConnectedAccounts() {
 
         <div
           onClick={() => setShowModal(true)}
-          className="border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer hover:border-blue-600 transition"
+          className="border-2 border-dashed border-gray-300 rounded-xl p-5 sm:p-6 flex flex-col items-center justify-center cursor-pointer hover:border-blue-600 transition min-h-[220px]"
         >
           <PlusIcon className="w-6 h-6 text-gray-400 mb-3" />
           <p className="text-sm text-gray-600">Connect New Account</p>
@@ -284,9 +284,9 @@ function ConnectedAccounts() {
 
 function SummaryCard({ title, value }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+    <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 shadow-sm">
       <p className="text-sm text-gray-500">{title}</p>
-      <p className="text-xl font-semibold mt-2">{value}</p>
+      <p className="text-lg sm:text-xl font-semibold mt-2">{value}</p>
     </div>
   );
 }

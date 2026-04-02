@@ -78,7 +78,7 @@ function AuditLogs() {
     <div className="space-y-8">
 
       {/* Header */}
-      <div className="flex justify-between items-start">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
         <div>
           <h1 className="text-2xl font-semibold">
             Audit Logs
@@ -88,7 +88,7 @@ function AuditLogs() {
           </p>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <button
             onClick={() => toast.info("Use search and quick filters to refine logs.")}
             className="flex items-center gap-2 border border-gray-300 px-4 py-2 rounded-lg text-sm"

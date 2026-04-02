@@ -22,7 +22,7 @@ export default function PlatformSidebar({
 }) {
 
   return (
-    <div className="group w-[70px] hover:w-[220px] transition-all duration-300 bg-white border-r border-gray-200 flex flex-col">
+    <div className="bg-white border-b lg:border-b-0 lg:border-r border-gray-200 flex w-full lg:w-[70px] lg:hover:w-[220px] lg:transition-all lg:duration-300 flex-row lg:flex-col overflow-x-auto lg:overflow-visible">
 
       {targets.map((target) => {
 
@@ -32,7 +32,7 @@ export default function PlatformSidebar({
           <button
             key={target.id}
             onClick={() => onSelect(target)}
-            className={`flex items-center gap-4 px-4 py-4 transition
+            className={`flex items-center gap-3 lg:gap-4 px-3 lg:px-4 py-3 lg:py-4 transition min-w-max lg:min-w-0
             ${active ? "bg-gray-100" : "hover:bg-gray-50"}`}
           >
 
@@ -42,7 +42,7 @@ export default function PlatformSidebar({
             </div>
 
            
-            <div className="opacity-0 group-hover:opacity-100 transition text-left">
+            <div className="text-left opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition">
 
               <div className="text-sm font-semibold capitalize">
                 {target.provider}

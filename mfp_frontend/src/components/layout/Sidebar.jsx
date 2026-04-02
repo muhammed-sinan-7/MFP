@@ -2,6 +2,7 @@ import { NavLink } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import {
+  XMarkIcon,
   HomeIcon,
   CalendarIcon,
   ChartBarIcon,
@@ -16,7 +17,7 @@ import {
 import { BarChart3 } from "lucide-react";
 import { BRAND_LOGO, BRAND_NAME } from "../../config/brand";
 import { logoutUser } from "../../services/api";
-function Sidebar() {
+function Sidebar({ className = "", onNavigate, onClose, showCloseButton = false }) {
   const [loggingOut, setLoggingOut] = useState(false);
   const { user } = useAuth();
 
@@ -42,9 +43,9 @@ function Sidebar() {
   }
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 flex flex-col justify-between">
+    <aside className={`w-64 bg-white border-r border-gray-200 flex flex-col justify-between ${className}`}>
       <div>
-        <div className="px-6 py-5">
+        <div className="px-4 sm:px-6 py-5 flex items-start justify-between">
           <div className="flex items-center gap-3">
             <img src={BRAND_LOGO} alt={BRAND_NAME} className="h-14 w-11 rounded-xl" />
             <div>
@@ -52,13 +53,24 @@ function Sidebar() {
               <p className="text-[11px] text-gray-500 mt-1">One Place, All Platforms</p>
             </div>
           </div>
+          {showCloseButton && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex items-center justify-center rounded-lg p-2 text-gray-500 hover:bg-gray-100 lg:hidden"
+              aria-label="Close menu"
+            >
+              <XMarkIcon className="h-5 w-5" />
+            </button>
+          )}
         </div>
 
-        <nav className="px-4 space-y-1">
+        <nav className="px-3 sm:px-4 space-y-1 overflow-y-auto max-h-[calc(100dvh-180px)]">
           {navItems.map((item) => (
             <NavLink
               key={item.name}
               to={item.path}
+              onClick={() => onNavigate?.()}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition ${
                   isActive
@@ -87,7 +99,7 @@ function Sidebar() {
           {loggingOut ? "Logging out..." : "Logout"}
         </button>
       </div>
-    </div>
+    </aside>
   );
 }
 

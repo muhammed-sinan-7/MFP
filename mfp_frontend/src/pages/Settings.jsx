@@ -99,7 +99,7 @@ export default function Settings() {
       <div className="max-w-3xl bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         
         {/* Header */}
-        <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center">
+        <div className="px-5 sm:px-8 py-5 sm:py-6 border-b border-gray-100 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
             <h2 className="text-xl font-bold text-gray-800">Organization Settings</h2>
             <p className="text-sm text-gray-500">Manage your company profile and branding</p>
@@ -107,7 +107,7 @@ export default function Settings() {
 
           <button
             onClick={() => isEditing ? setIsEditing(false) : setIsEditing(true)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors ${
+            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md font-medium transition-colors ${
               isEditing ? "text-gray-600 hover:bg-gray-100" : "bg-blue-600 text-white hover:bg-blue-700"
             }`}
           >
@@ -115,7 +115,7 @@ export default function Settings() {
           </button>
         </div>
 
-        <div className="p-8 space-y-6">
+        <div className="p-5 sm:p-8 space-y-6">
           {/* Logo Section */}
           <div className="flex flex-col sm:flex-row gap-6 items-center border-b border-gray-50 pb-6">
             <div className="relative group">
@@ -201,11 +201,11 @@ export default function Settings() {
 
         {/* Footer Actions */}
         {isEditing && (
-          <div className="px-8 py-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-100">
+          <div className="px-5 sm:px-8 py-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-100">
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 disabled:opacity-70"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 disabled:opacity-70"
             >
               <Save size={18} />
               {loading ? "Saving..." : "Save Changes"}

@@ -134,7 +134,7 @@ export default function AIAssistPanel({ onClose, content, setContent, platform }
   };
 
   return (
-    <div className="fixed top-24 right-8 bottom-24 w-[420px] bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col ring-1 ring-black/5">
+    <div className="fixed inset-3 sm:inset-4 lg:top-24 lg:right-8 lg:bottom-24 lg:left-auto lg:w-[420px] bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col ring-1 ring-black/5">
       <div className="px-5 py-4 border-b border-slate-100 bg-gradient-to-b from-slate-50 to-white flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center">

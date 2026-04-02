@@ -1,4 +1,4 @@
-import axios from "axios";
+﻿import axios from "axios";
 
 const API_BASE = import.meta.env.VITE_API_BASE;
 const REQUEST_TIMEOUT_MS = 15000;
@@ -66,6 +66,7 @@ const loadPersistedAccessToken = () => {
 let accessToken = loadPersistedAccessToken();
 let isRefreshing = false;
 let refreshSubscribers = [];
+let refreshInFlightPromise = null;
 const AUTH_EVENT_KEY = "auth:event";
 
 const broadcastAuthEvent = (type) => {
@@ -142,25 +143,35 @@ export const clearAuthStorage = () => {
 };
 
 export const refreshAccessToken = async () => {
-  try {
-    const persist = getAccessTokenPersistenceMode() === "local";
-    const response = await axios.post(
-      `${API_BASE}/auth/token/refresh/`,
-      {},
-      { withCredentials: true, timeout: REQUEST_TIMEOUT_MS },
-    );
-
-    const newAccessToken = response.data.access;
-    setAccessToken(newAccessToken, { persist });
-    return response.data;
-  } catch (error) {
-    if (error.response?.status === 401) {
-      clearAccessToken();
-      return null;
-    }
-
-    throw error;
+  if (refreshInFlightPromise) {
+    return refreshInFlightPromise;
   }
+
+  const persist = getAccessTokenPersistenceMode() === "local";
+  refreshInFlightPromise = (async () => {
+    try {
+      const response = await axios.post(
+        `${API_BASE}/auth/token/refresh/`,
+        {},
+        { withCredentials: true, timeout: REQUEST_TIMEOUT_MS },
+      );
+
+      const newAccessToken = response.data.access;
+      setAccessToken(newAccessToken, { persist });
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 401) {
+        clearAccessToken();
+        return null;
+      }
+
+      throw error;
+    } finally {
+      refreshInFlightPromise = null;
+    }
+  })();
+
+  return refreshInFlightPromise;
 };
 
 
@@ -235,13 +246,19 @@ API.interceptors.response.use(
       originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
       return API(originalRequest);
 
-    } catch (refreshError) {
-      const hadAccessToken = Boolean(accessToken);
-      clearAuthStorage();
+        } catch (refreshError) {
+      const shouldForceLogout = refreshError?.response?.status === 401;
 
-      // ❌ reject queued requests
-      if (hadAccessToken) {
-        onRefreshFailed();
+      if (shouldForceLogout) {
+        const hadAccessToken = Boolean(accessToken);
+        clearAuthStorage();
+
+        if (hadAccessToken) {
+          onRefreshFailed();
+        } else {
+          refreshSubscribers.forEach((callback) => callback(null));
+          refreshSubscribers = [];
+        }
       } else {
         refreshSubscribers.forEach((callback) => callback(null));
         refreshSubscribers = [];
@@ -268,3 +285,4 @@ export async function logoutUser() {
 }
 
 export default API;
+

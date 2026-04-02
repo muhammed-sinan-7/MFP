@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+﻿import { useState, useEffect, useMemo, useCallback } from "react";
 import { addMonths, subMonths, isBefore, isSameDay, startOfDay } from "date-fns";
 import CalendarSection from "../components/schedule/CalenderSection";
 import DailyAgenda from "../components/schedule/DailyAgenda";
@@ -389,8 +389,8 @@ export default function SchedulePage() {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      <div className="flex flex-1 min-h-0 overflow-hidden">
-        <div className="flex-1 min-w-0 min-h-0 px-8 py-6">
+      <div className="flex flex-1 min-h-0 overflow-hidden flex-col xl:flex-row">
+        <div className="flex-1 min-w-0 min-h-0 px-0 py-0 sm:px-2 sm:py-1 lg:px-3 lg:py-2">
           <div className="h-full bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden">
             <CalendarSection
               currentMonth={currentMonth}
@@ -406,7 +406,7 @@ export default function SchedulePage() {
           </div>
         </div>
 
-        <div className="w-[380px] shrink-0 border-l border-gray-200 bg-white">
+        <div className="w-full xl:w-[360px] 2xl:w-[380px] shrink-0 border-t xl:border-t-0 xl:border-l border-gray-200 bg-white min-h-[240px] xl:min-h-0">
           <DailyAgenda posts={calendarPosts} selectedDate={selectedDate} />
         </div>
       </div>
@@ -426,9 +426,9 @@ export default function SchedulePage() {
       </div>
 
       {isDrawerOpen && (
-        <div className="fixed inset-0 z-50 bg-gradient-to-br from-gray-100 to-gray-200 flex flex-col">
+        <div className="fixed inset-0 z-50 bg-gradient-to-br from-gray-100 to-gray-200 flex flex-col overflow-hidden">
           {/* HEADER */}
-          <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-10 shadow-sm">
+          <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 lg:px-10 shadow-sm">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
                 Create Schedule
@@ -442,12 +442,12 @@ export default function SchedulePage() {
               onClick={() => setIsDrawerOpen(false)}
               className="text-gray-400 hover:text-gray-700 text-xl transition"
             >
-              ✕
+              ×
             </button>
           </div>
 
           {/* BODY */}
-          <div className="flex flex-1 overflow-hidden">
+          <div className="flex flex-1 overflow-hidden flex-col lg:flex-row">
             <PlatformSidebar
               targets={targets}
               selectedTargets={selectedTargets}
@@ -455,7 +455,7 @@ export default function SchedulePage() {
               onSelect={handlePlatformSelect}
             />
 
-            <div className="flex-1 flex p-10">
+            <div className="flex-1 flex p-3 sm:p-4 lg:p-8 overflow-auto">
               {!activeTarget && (
                 <div className="flex items-center justify-center w-full text-gray-400">
                   Select a platform to start editing
@@ -480,8 +480,8 @@ export default function SchedulePage() {
           </div>
 
           {/* FOOTER */}
-          <div className="h-20 bg-white border-t border-gray-200 flex items-center justify-end px-10 shadow-sm">
-            <div className="flex gap-4">
+          <div className="h-20 bg-white border-t border-gray-200 flex items-center justify-end px-4 sm:px-6 lg:px-10 shadow-sm">
+            <div className="flex gap-3 sm:gap-4">
               <button
                 onClick={() => setIsDrawerOpen(false)}
                 className="px-6 py-2 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-50"

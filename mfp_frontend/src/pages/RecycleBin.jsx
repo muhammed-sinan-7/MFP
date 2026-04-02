@@ -233,7 +233,7 @@ export default function RecycleBinPage() {
 
   if (loading && page === 1) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-white">
+      <div className="flex flex-col items-center justify-center h-full min-h-[320px] bg-white">
         <div className="w-12 h-12 border-[3px] border-blue-600 border-t-transparent rounded-full animate-spin"></div>
         <p className="mt-4 text-slate-500 font-medium tracking-tight">
           Syncing Recycle Bin...
@@ -246,7 +246,7 @@ export default function RecycleBinPage() {
     <div className="flex flex-col min-h-full bg-[#F8FAFC] font-sans text-slate-900">
       {/* 01. Minimal Unified Header (No white BG) */}
       <div className="pb-6 space-y-8">
-        <div className="flex items-end justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
@@ -280,7 +280,7 @@ export default function RecycleBinPage() {
         </div>
 
         {/* 02. Floating Search & Tool Bar */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <div className="relative flex-1 group">
             <div className="absolute inset-y-0 left-4 flex items-center text-slate-400 group-focus-within:text-blue-600 transition-colors">
               <Icons.Search />
@@ -306,7 +306,8 @@ export default function RecycleBinPage() {
       {/* 03. Scrollable Table Area */}
       <main className="flex-1 overflow-y-auto pb-8">
         <div className="bg-white border border-slate-200 rounded-[24px] shadow-sm overflow-hidden">
-          <table className="w-full text-left">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[760px] text-left">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
                 <th className="px-6 py-4 w-12">
@@ -400,15 +401,16 @@ export default function RecycleBinPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </main>
 
       {/* 04. Minimal Pagination Footer */}
-      <footer className="py-5 bg-white border-t border-slate-200 flex items-center justify-between">
+      <footer className="py-5 bg-white border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
         <p className="text-[13px] font-semibold text-slate-400">
           Page <span className="text-slate-900">{page}</span> of {totalPages}
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-center gap-2 w-full sm:w-auto">
           <button
             disabled={page === 1}
             onClick={() => loadPosts(page - 1)}

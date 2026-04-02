@@ -141,7 +141,7 @@ export default function PostsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen text-gray-500">
+      <div className="flex items-center justify-center h-full min-h-[320px] text-gray-500">
         Loading posts...
       </div>
     );
@@ -149,25 +149,24 @@ export default function PostsPage() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 sm:mb-8 gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Post Management</h1>
-          <p className="text-sm text-gray-600 mt-1">
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Post Management</h1>
+          <p className="text-xs sm:text-sm text-gray-600 mt-1">
             Plan, review, and analyze your multi-channel marketing content.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto">
           <button
             onClick={handleExportCsv}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 bg-white rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="flex-1 md:flex-none justify-center inline-flex items-center px-3 sm:px-4 py-2 border border-gray-300 bg-white rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             Export CSV
           </button>
           <button
             onClick={() => navigate("/schedule")}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+            className="flex-1 md:flex-none justify-center inline-flex items-center px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 whitespace-nowrap"
           >
             + Create New Post
           </button>
@@ -210,8 +209,8 @@ export default function PostsPage() {
         />
       </div>
 
-      {/* Search + Filters (unchanged) */}
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-3 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Search + Filters */}
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-3 sm:p-4 mb-6 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         <input
           type="text"
           value={search}
@@ -220,53 +219,57 @@ export default function PostsPage() {
             setPage(1);
           }}
           placeholder="Search by title, author, or keyword..."
-          className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm w-full sm:w-80 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="border border-gray-300 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-sm w-full xl:max-w-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
-        <div className="flex items-center gap-2 flex-wrap">
-          <select
-            value={platform}
-            onChange={(e) => {
-              setPlatform(e.target.value);
-              setPage(1);
-            }}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-          >
-            <option value="">All Platforms</option>
-            <option value="linkedin">LinkedIn</option>
-            <option value="instagram">Instagram</option>
-            <option value="youtube">YouTube</option>
-          </select>
-          <select
-            value={status}
-            onChange={(e) => {
-              setStatus(e.target.value);
-              setPage(1);
-            }}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-          >
-            <option value="">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="processing">Processing</option>
-            <option value="success">Success</option>
-            <option value="failed">Failed</option>
-          </select>
-          <button
-            onClick={toggleDateRange}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
-          >
-            {dateRangeMode === "all" ? "Date Range: All" : "Date Range: Last 7 Days"}
-          </button>
-          <button
-            onClick={() => {
-              setSearch("");
-              setPlatform("");
-              setStatus("");
-              setPage(1);
-            }}
-            className="text-blue-600 text-sm font-medium"
-          >
-            Clear All
-          </button>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 flex-wrap">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <select
+              value={platform}
+              onChange={(e) => {
+                setPlatform(e.target.value);
+                setPage(1);
+              }}
+              className="flex-1 sm:flex-none px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            >
+              <option value="">All Platforms</option>
+              <option value="linkedin">LinkedIn</option>
+              <option value="instagram">Instagram</option>
+              <option value="youtube">YouTube</option>
+            </select>
+            <select
+              value={status}
+              onChange={(e) => {
+                setStatus(e.target.value);
+                setPage(1);
+              }}
+              className="flex-1 sm:flex-none px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            >
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="processing">Processing</option>
+              <option value="success">Success</option>
+              <option value="failed">Failed</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={toggleDateRange}
+              className="flex-1 sm:flex-none px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 whitespace-nowrap"
+            >
+              {dateRangeMode === "all" ? "Range: All" : "Range: Last 7 Days"}
+            </button>
+            <button
+              onClick={() => {
+                setSearch("");
+                setPlatform("");
+                setStatus("");
+                setPage(1);
+              }}
+              className="px-3 py-2 text-blue-600 text-sm font-medium hover:bg-blue-50 rounded-lg"
+            >
+              Clear
+            </button>
+          </div>
         </div>
       </div>
 
@@ -428,30 +431,6 @@ export default function PostsPage() {
               )}
             </tbody>
           </table>
-        </div>
-        {/* Pagination (unchanged) */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-6 py-4 border-t border-gray-200 bg-white text-sm text-gray-600">
-          <p>
-            Showing {(page - 1) * pageSize + 1} -{" "}
-            {Math.min(page * pageSize, count)} of {count} results
-          </p>
-          <div className="flex items-center gap-2 mt-3 sm:mt-0">
-            <button
-              disabled={page === 1}
-              onClick={() => setPage(page - 1)}
-              className="px-3 py-1.5 border border-gray-300 rounded text-sm disabled:opacity-50 hover:bg-gray-50"
-            >
-              Previous
-            </button>
-            <span className="px-3 py-1.5 font-medium">{page}</span>
-            <button
-              disabled={page === totalPages}
-              onClick={() => setPage(page + 1)}
-              className="px-3 py-1.5 border border-gray-300 rounded text-sm disabled:opacity-50 hover:bg-gray-50"
-            >
-              Next
-            </button>
-          </div>
         </div>
       </div>
 

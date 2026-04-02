@@ -14,10 +14,10 @@ export default function CalendarSection({
   onDateSelect,
 }) {
   return (
-    <div className="flex flex-col h-full p-8">
+    <div className="flex flex-col h-full p-3 sm:p-4 lg:p-8">
       {/* HEADER */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">
+      <div className="mb-4 sm:mb-6 lg:mb-8">
+        <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">
           Content Schedule
         </h1>
         <p className="text-sm text-gray-500 mt-1">
@@ -26,7 +26,7 @@ export default function CalendarSection({
       </div>
 
       {/* TOOLBAR */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-center lg:justify-between mb-4 sm:mb-5 lg:mb-6">
         {/* LEFT TOGGLE */}
         <div className="flex items-center bg-gray-100 rounded-lg p-1">
           <button
@@ -44,8 +44,8 @@ export default function CalendarSection({
         </div>
 
         {/* RIGHT CONTROLS */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center border border-gray-200 rounded-lg bg-white shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <div className="flex items-center border border-gray-200 rounded-lg bg-white shadow-sm w-fit">
             <button
               onClick={onPrev}
               type="button"
@@ -66,7 +66,7 @@ export default function CalendarSection({
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <select
               value={filterStatus}
               onChange={(e) => onFilterChange?.(e.target.value)}

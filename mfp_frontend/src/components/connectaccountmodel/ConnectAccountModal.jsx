@@ -19,8 +19,8 @@ function ConnectAccountModal({ isOpen, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white w-[480px] rounded-2xl p-8 border border-gray-200 relative shadow-lg">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <div className="bg-white w-full max-w-[480px] rounded-2xl p-5 sm:p-8 border border-gray-200 relative shadow-lg">
 
         <button
           onClick={onClose}
@@ -29,7 +29,7 @@ function ConnectAccountModal({ isOpen, onClose }) {
           <XMarkIcon className="w-5 h-5" />
         </button>
 
-        <h2 className="text-xl font-semibold mb-6">
+        <h2 className="text-lg sm:text-xl font-semibold mb-5 sm:mb-6">
           Connect New Account
         </h2>
 
