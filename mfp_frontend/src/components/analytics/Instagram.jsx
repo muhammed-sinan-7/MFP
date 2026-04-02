@@ -31,6 +31,7 @@ const InstagramAnalytics = ({
   topPosts,
   performance,
   onRefresh,
+  isConnected = true,
 }) => {
   const navigate = useNavigate();
   const gallery = (performance || [])
@@ -125,6 +126,33 @@ const InstagramAnalytics = ({
     window.open(postUrl, "_blank", "noopener,noreferrer");
   };
 
+  if (!isConnected) {
+    return (
+      <div className="w-full flex items-center justify-center py-16">
+        <div className="w-full max-w-lg rounded-2xl border border-blue-100 bg-white px-6 py-8 text-center shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-800">Connect Instagram first</h2>
+          <p className="mt-2 text-sm text-slate-500">
+            Connect your Instagram account and schedule a post to unlock analytics.
+          </p>
+          <div className="mt-5 flex flex-wrap justify-center gap-2">
+            <button
+              onClick={() => navigate("/accounts")}
+              className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"
+            >
+              Connect Account
+            </button>
+            <button
+              onClick={() => navigate("/schedule")}
+              className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50"
+            >
+              Schedule Post
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!hasData) {
     return (
       <div className="w-full flex items-center justify-center py-16">
@@ -142,7 +170,7 @@ const InstagramAnalytics = ({
     <div className="w-full font-sans text-gray-900">
       <div>
         {/* Header Section */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">
               Instagram Insights
@@ -151,7 +179,7 @@ const InstagramAnalytics = ({
               Detailed performance tracking for your Instagram presence.
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             <button
               onClick={handleRefresh}
               className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-600 shadow-sm"
@@ -199,9 +227,9 @@ const InstagramAnalytics = ({
         </div>
 
         {/* Middle Section: Chart & Top Performing */}
-        <div className="grid grid-cols-12 gap-8 mb-8">
+        <div className="mb-8 grid grid-cols-1 gap-5 lg:grid-cols-12 lg:gap-8">
           {/* Engagement Area Chart */}
-          <div className="col-span-8 bg-white p-8 rounded-[24px] border border-gray-100 shadow-sm">
+          <div className="lg:col-span-8 bg-white p-4 sm:p-6 lg:p-8 rounded-[24px] border border-gray-100 shadow-sm">
             <div className="flex justify-between items-center mb-8">
               <div>
                 <h3 className="font-bold text-gray-900">Engagement Growth</h3>
@@ -271,7 +299,7 @@ const InstagramAnalytics = ({
           </div>
 
           {/* Top Performing Sidebar */}
-          <div className="col-span-4 bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col">
+          <div className="lg:col-span-4 bg-white p-5 sm:p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col">
             <h3 className="font-bold text-sm mb-1">Top Performing</h3>
             <p className="text-gray-400 text-[10px] mb-6">
               Best engagement rate this week.
@@ -345,7 +373,7 @@ const InstagramAnalytics = ({
               View Insights Grid
             </button>
           </div>
-          <div className="grid grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
             {(gallery || []).length ? (
               (gallery || []).slice(0, 6).map((item, i) => (
                 <div
@@ -360,7 +388,7 @@ const InstagramAnalytics = ({
                 </div>
               ))
             ) : (
-              <div className="col-span-6 rounded-xl border border-blue-100 bg-white px-4 py-8 text-center text-sm text-slate-500">
+              <div className="col-span-full rounded-xl border border-blue-100 bg-white px-4 py-8 text-center text-sm text-slate-500">
                 No media found.
               </div>
             )}
@@ -383,7 +411,7 @@ const InstagramAnalytics = ({
               Download CSV <Download size={14} />
             </button>
           </div>
-          <table className="w-full text-left">
+          <table className="w-full min-w-[760px] text-left">
             <thead className="bg-gray-50/50 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
               <tr>
                 <th className="px-6 py-4">Post Title</th>

@@ -32,13 +32,13 @@ export default function DailyAgenda({ posts = [], selectedDate }) {
     );
 
   return (
-    <div className="h-full overflow-y-auto p-6 bg-transparent rounded-xl">
-      <div className="flex justify-between items-center mb-2">
-        <h2 className="text-lg font-semibold">Daily Agenda</h2>
+    <div className="h-full overflow-y-auto p-4 sm:p-5 lg:p-6 bg-transparent rounded-xl">
+      <div className="flex justify-between items-center gap-2 mb-2">
+        <h2 className="text-base sm:text-lg font-semibold">Daily Agenda</h2>
         <span className="text-xs text-gray-500">{formatDate}</span>
       </div>
 
-      <p className="text-sm text-gray-500 mb-6">
+      <p className="text-sm text-gray-500 mb-4 sm:mb-6">
         You have {agendaItems.length} posts scheduled for this day.
       </p>
 
@@ -57,10 +57,10 @@ export default function DailyAgenda({ posts = [], selectedDate }) {
               return (
                 <div
                   key={`${item.postId}-${item.platformId}`}
-                  className="p-4 border border-gray-200 rounded-xl bg-gray-50"
+                  className="p-3 sm:p-4 border border-gray-200 rounded-xl bg-gray-50"
                 >
                   <div className="text-xs text-gray-500">{time}</div>
-                  <div className="mt-1 font-medium text-gray-900">
+                  <div className="mt-1 text-sm font-medium text-gray-900">
                     {item.caption.slice(0, 100) || "Untitled Post"}
                   </div>
                   <div className="flex gap-4">
@@ -77,7 +77,7 @@ export default function DailyAgenda({ posts = [], selectedDate }) {
         )}
       </div>
 
-      <div className="mt-8 p-4 bg-blue-50 rounded-xl text-sm">
+      <div className="mt-6 p-3 sm:p-4 bg-blue-50 rounded-xl text-sm">
         <div className="font-semibold text-blue-700 mb-1">
           AI Optimization Tip
         </div>

@@ -34,3 +34,21 @@ export const deleteAdminSocialAccount = (id) =>
 
 export const listAdminAuditLogs = (params) =>
   API.get("/admin-panel/audit-logs/", { params });
+
+export const listAdminIndustries = (params) =>
+  API.get("/admin-panel/industries/", { params });
+export const createAdminIndustry = (data) =>
+  API.post("/admin-panel/industries/", data);
+export const updateAdminIndustry = (id, data) =>
+  API.patch(`/admin-panel/industries/${id}/`, data);
+export const deleteAdminIndustry = (id) =>
+  API.delete(`/admin-panel/industries/${id}/`);
+
+export const listAdminNewsSources = (params) =>
+  API.get("/admin-panel/news-sources/", { params });
+export const createAdminNewsSource = (data) =>
+  API.post("/admin-panel/news-sources/", data);
+export const updateAdminNewsSource = (id, data) =>
+  API.patch(`/admin-panel/news-sources/${id}/`, data);
+export const deleteAdminNewsSource = (id) =>
+  API.delete(`/admin-panel/news-sources/${id}/`);

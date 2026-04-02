@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UniSocial / MFP - Project Documentation</title>
+  <style>
+    body { font-family: Inter, Arial, sans-serif; line-height: 1.6; margin: 32px auto; max-width: 980px; color: #111827; }
+    h1, h2, h3 { color: #0f172a; }
+    h1 { font-size: 32px; margin-bottom: 8px; }
+    h2 { margin-top: 32px; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; }
+    h3 { margin-top: 20px; }
+    p, li { font-size: 14px; }
+    ul, ol { margin-top: 4px; }
+    code { background: #f3f4f6; padding: 2px 6px; border-radius: 6px; font-family: Consolas, monospace; font-size: 13px; }
+    .muted { color: #6b7280; }
+    .callout { background: #eff6ff; border: 1px solid #bfdbfe; padding: 12px 14px; border-radius: 10px; margin: 12px 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #e5e7eb; text-align: left; padding: 8px 10px; font-size: 13px; }
+    th { background: #f8fafc; }
+    hr { border: none; border-top: 1px solid #e5e7eb; margin: 24px 0; }
+  </style>
+</head>
+<body>
+  <h1>UniSocial / MFP - Full Project Documentation</h1>
+  <p class="muted">Generated for Notion Import | Source snapshot date: <code>2026-04-02</code></p>
+
+  <div class="callout">
+    <strong>How to import into Notion</strong><br />
+    In Notion: <code>Import -> HTML</code> and select this file.<br />
+    This keeps headings, tables, and section structure cleaner than copy-paste markdown.
+  </div>
+
+  <h2>1. Product Overview</h2>
+  <p><strong>MFP</strong> (UI brand: <strong>UniSocial</strong>) is a multi-tenant social media management SaaS.</p>
+  <ul>
+    <li>User auth with OTP + JWT session lifecycle</li>
+    <li>Organization onboarding and role-based access control</li>
+    <li>Social connections: Meta/Instagram, LinkedIn, YouTube</li>
+    <li>Cross-platform post creation, scheduling, async publishing</li>
+    <li>Analytics aggregation and dashboard reporting</li>
+    <li>Industry news ingestion + feed display</li>
+    <li>AI-assisted post generation</li>
+    <li>Audit log and platform admin operations</li>
+  </ul>
+
+  <h2>2. High-Level Architecture</h2>
+  <table>
+    <thead>
+      <tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Frontend</td><td>React + Vite + Tailwind</td><td>SPA UI and route shell</td></tr>
+      <tr><td>Backend</td><td>Django + DRF</td><td>API, business logic, tenancy</td></tr>
+      <tr><td>DB</td><td>PostgreSQL</td><td>Primary relational store</td></tr>
+      <tr><td>Cache/Broker</td><td>Redis</td><td>Caching + Celery queue backend</td></tr>
+      <tr><td>Workers</td><td>Celery + Beat</td><td>Async publish/sync/cleanup jobs</td></tr>
+      <tr><td>Proxy</td><td>Nginx</td><td>TLS termination + upstream routing</td></tr>
+      <tr><td>Storage</td><td>AWS S3</td><td>Media/object storage</td></tr>
+      <tr><td>Monitoring</td><td>Prometheus + Sentry + Flower</td><td>Health, metrics, task visibility</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Runtime Services (Docker Compose)</h3>
+  <ul>
+    <li><code>web</code>, <code>db</code>, <code>redis</code>, <code>celery</code>, <code>celery_beat</code>, <code>flower</code>, <code>nginx</code>, <code>certbot</code></li>
+  </ul>
+
+  <h2>3. Repository Structure</h2>
+  <ul>
+    <li><code>mfp_backend/</code> - Django backend</li>
+    <li><code>mfp_frontend/</code> - React frontend</li>
+    <li><code>docker-compose.yml</code> - orchestration</li>
+    <li><code>PROJECT_DOCUMENTATION_NOTION_READY.md</code> - full markdown docs</li>
+    <li><code>NOTION_IMPORT_PROJECT_DOC.html</code> - this import file</li>
+  </ul>
+
+  <h2>4. Security and Session Design</h2>
+  <h3>Authentication Pattern</h3>
+  <ul>
+    <li>Access token: JWT bearer (short TTL: 15 minutes)</li>
+    <li>Refresh token: HttpOnly cookie (default 7 days, remember-me extends to 30 days)</li>
+    <li>Refresh rotation and blacklist enabled via SimpleJWT settings</li>
+  </ul>
+
+  <h3>Why this was implemented</h3>
+  <ul>
+    <li>Reduces XSS token exposure by keeping refresh token out of JS-accessible storage</li>
+    <li>Balances user convenience and security with short-lived access tokens</li>
+    <li>Supports seamless background refresh and cross-tab consistency</li>
+  </ul>
+
+  <h3>OTP Security</h3>
+  <ul>
+    <li>OTP stored as HMAC digest, never plain text</li>
+    <li>Attempt limit + cooldown + expiry</li>
+    <li>Unique active OTP constraint per user and purpose</li>
+  </ul>
+
+  <h3>Cookie/CORS/CSRF</h3>
+  <ul>
+    <li>Environment-driven cookie domain, secure, and SameSite behavior</li>
+    <li>Credentialed CORS enabled</li>
+    <li>Trusted origins configured for CSRF</li>
+  </ul>
+
+  <h3>Credential Protection</h3>
+  <ul>
+    <li>Provider tokens are encrypted in DB (<code>django-encrypted-model-fields</code>)</li>
+    <li>Password hashes managed by Django auth system</li>
+  </ul>
+
+  <h2>5. Data Model Overview</h2>
+  <table>
+    <thead>
+      <tr><th>Domain</th><th>Main Models</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Identity</td><td><code>User</code>, <code>OTPToken</code></td><td>Email-first auth, verification + reset OTP</td></tr>
+      <tr><td>Tenancy</td><td><code>Organization</code>, <code>OrganizationMember</code></td><td>Role-based org isolation</td></tr>
+      <tr><td>Social</td><td><code>SocialAccount</code>, <code>PublishingTarget</code>, <code>MetaPage</code>, <code>LinkedInOrganization</code></td><td>OAuth-linked account graph</td></tr>
+      <tr><td>Publishing</td><td><code>Post</code>, <code>PostPlatform</code>, <code>PostPlatformMedia</code></td><td>One post -> many platform jobs</td></tr>
+      <tr><td>Analytics</td><td><code>PostPlatformAnalytics</code>, <code>PostPlatformAnalyticsSnapshot</code></td><td>Current + historical metrics</td></tr>
+      <tr><td>News</td><td><code>NewsSource</code>, <code>NewsArticle</code></td><td>Industry-based ingestion</td></tr>
+      <tr><td>Audit</td><td><code>AuditLog</code></td><td>Immutable event records</td></tr>
+    </tbody>
+  </table>
+
+  <h2>6. How Scheduling Works (Deep Explanation)</h2>
+  <h3>How account selection is determined</h3>
+  <p>The scheduler does not guess account/provider. It uses explicit FK chain:</p>
+  <p><code>PostPlatform -> PublishingTarget -> SocialAccount -> credentials</code></p>
+
+  <h3>Create flow</h3>
+  <ol>
+    <li>Frontend sends <code>publishing_target_ids[]</code> + media + caption + schedule time.</li>
+    <li>Backend validates targets belong to requesting org and are active.</li>
+    <li>One <code>PostPlatform</code> row is created per target.</li>
+    <li>Media rows are attached and provider constraints validated.</li>
+  </ol>
+
+  <h3>Dispatch and publish flow</h3>
+  <ol>
+    <li>Beat task runs every minute and picks due jobs.</li>
+    <li>Worker locks row for idempotency (<code>select_for_update</code>).</li>
+    <li>Provider-specific publisher executes (Instagram/LinkedIn/YouTube).</li>
+    <li>Success/failure/retry metadata is persisted on each platform row.</li>
+  </ol>
+
+  <h2>7. Social OAuth Flows</h2>
+  <h3>Meta/Instagram</h3>
+  <ul>
+    <li>State signed with HMAC to prevent tampering</li>
+    <li>Short-lived token exchanged for long-lived token</li>
+    <li>Page sync creates Meta and Instagram publishing targets</li>
+  </ul>
+
+  <h3>LinkedIn</h3>
+  <ul>
+    <li>State stored in cache with TTL</li>
+    <li>Profile fetched from userinfo or decoded from id_token fallback</li>
+    <li>On token revoke/invalid: account and targets deactivated to force reconnect</li>
+  </ul>
+
+  <h3>YouTube</h3>
+  <ul>
+    <li>OAuth includes offline refresh token access</li>
+    <li>Account/channel persisted and publishing target created</li>
+    <li>Token refresh can happen both scheduled and during publish</li>
+  </ul>
+
+  <h2>8. Analytics Pipeline</h2>
+  <ol>
+    <li>Periodic task scans successfully published post-platform rows.</li>
+    <li>Fetcher chosen from provider registry.</li>
+    <li>Latest metrics upserted in current table.</li>
+    <li>Snapshot written with de-duplication window to reduce noise.</li>
+    <li>Read APIs aggregate and cache responses for dashboard/graphs.</li>
+  </ol>
+
+  <h2>9. Platform Admin Module</h2>
+  <h3>Existing admin coverage</h3>
+  <ul>
+    <li>Users, Organizations, Posts, Social Accounts, Audit Logs</li>
+  </ul>
+
+  <h3>Newly implemented in this update</h3>
+  <ul>
+    <li><strong>Industry CRUD</strong> in platform admin API and UI</li>
+    <li><strong>News Source CRUD</strong> in platform admin API and UI</li>
+  </ul>
+
+  <h3>New API endpoints</h3>
+  <ul>
+    <li><code>GET/POST /api/v1/admin-panel/industries/</code></li>
+    <li><code>PATCH/DELETE /api/v1/admin-panel/industries/&lt;industry_id&gt;/</code></li>
+    <li><code>GET/POST /api/v1/admin-panel/news-sources/</code></li>
+    <li><code>PATCH/DELETE /api/v1/admin-panel/news-sources/&lt;source_id&gt;/</code></li>
+  </ul>
+
+  <h2>10. Why “Unauthorized / Session Checking / Slow” Happens</h2>
+  <h3>Unauthorized & refresh loops</h3>
+  <ul>
+    <li>Refresh cookie domain/samesite mismatch</li>
+    <li>Stale frontend JS bundle after deployment</li>
+    <li>Expired/blacklisted refresh token</li>
+    <li>Inactive user account now blocked by refresh/login checks</li>
+  </ul>
+
+  <h3>Long “checking session” and endpoint slowness</h3>
+  <ul>
+    <li>Cold cache, slow DB query, or provider API latency</li>
+    <li>Worker queue backlog</li>
+    <li>Multiple heavy calls triggered on initial page mount</li>
+    <li>Infrastructure resource limits</li>
+  </ul>
+
+  <h2>11. Environment Variables</h2>
+  <p>Major categories used in this project:</p>
+  <ul>
+    <li>Core: <code>SECRET_KEY</code>, <code>DEBUG</code>, hosts/origins</li>
+    <li>Auth/cookies: refresh cookie name/domain/path/samesite/secure</li>
+    <li>Database: <code>DB_*</code></li>
+    <li>Redis/Celery: <code>REDIS_URL</code>, <code>CELERY_*</code></li>
+    <li>S3: AWS credentials and bucket settings</li>
+    <li>OAuth: Meta/LinkedIn/Google client credentials</li>
+    <li>AI: <code>GROQ_API_KEY</code>, <code>OPENAI_API_KEY</code></li>
+    <li>Observability: <code>SENTRY_DSN</code></li>
+    <li>Frontend: <code>VITE_API_BASE</code></li>
+  </ul>
+
+  <h2>12. Operational Guidance</h2>
+  <ul>
+    <li>Keep secrets out of Git and rotate if accidentally exposed.</li>
+    <li>Hard refresh frontend after deployment to avoid stale auth logic.</li>
+    <li>Use health endpoints <code>/health/</code> and <code>/ready/</code> for checks.</li>
+    <li>Use Flower + request timing logs to diagnose queue and latency issues.</li>
+  </ul>
+
+  <hr />
+  <p class="muted">
+    Generated from code under <code>mfp_backend/</code>, <code>mfp_frontend/</code>, and <code>docker-compose.yml</code>.
+    Keep this file updated whenever auth/session, scheduling, analytics, or admin flows change.
+  </p>
+</body>
+</html>

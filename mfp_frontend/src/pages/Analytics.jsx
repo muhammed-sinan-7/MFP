@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Instagram, Linkedin, Youtube } from "lucide-react";
+import { socialList } from "../services/accountService";
 
 import { useAnalytics } from "../hooks/useAnalytics";
 import { useInstagramAnalytics } from "../hooks/useInstagramAnalytics";
@@ -14,7 +15,7 @@ import YouTubeAnalytics from "../components/analytics/Youtube";
 
 /* ---------------- TAB DATA LOADERS ---------------- */
 
-const OverviewTab = () => {
+const OverviewTab = ({ connectedPlatforms }) => {
   const overviewData = useAnalytics();
 
   return (
@@ -24,11 +25,12 @@ const OverviewTab = () => {
       engagementDistribution={overviewData.engagementDistribution}
       recentPosts={overviewData.recentPosts}
       onRefresh={overviewData.refetch}
+      connectedPlatforms={connectedPlatforms}
     />
   );
 };
 
-const InstagramTab = () => {
+const InstagramTab = ({ isConnected }) => {
   const instagramData = useInstagramAnalytics();
 
   return (
@@ -38,11 +40,12 @@ const InstagramTab = () => {
       topPosts={instagramData.topPosts}
       performance={instagramData.performance}
       onRefresh={instagramData.refetch}
+      isConnected={isConnected}
     />
   );
 };
 
-const LinkedinTab = () => {
+const LinkedinTab = ({ isConnected }) => {
   const linkedinData = useLinkedinAnalytics();
 
   return (
@@ -51,11 +54,13 @@ const LinkedinTab = () => {
       growth={linkedinData.growth}
       posts={linkedinData.posts}
       onRefresh={linkedinData.refetch}
+      isConnected={isConnected}
+      analyticsApproved={false}
     />
   );
 };
 
-const YoutubeTab = () => {
+const YoutubeTab = ({ isConnected }) => {
   const youtubeData = useYoutubeAnalytics();
 
   return (
@@ -65,6 +70,7 @@ const YoutubeTab = () => {
       videos={youtubeData.videos}
       trafficSources={youtubeData.trafficSources}
       onRefresh={youtubeData.refetch}
+      isConnected={isConnected}
     />
   );
 };
@@ -74,13 +80,53 @@ const YoutubeTab = () => {
 const Analytics = () => {
 
   const [platform, setPlatform] = useState("overview");
+  const [connectedPlatforms, setConnectedPlatforms] = useState([]);
+
+  React.useEffect(() => {
+    let mounted = true;
+
+    async function loadConnections() {
+      try {
+        const response = await socialList();
+        const accounts = response?.data || [];
+        const providers = new Set();
+
+        accounts.forEach((account) => {
+          (account.publishing_targets || []).forEach((target) => {
+            if (target?.provider) {
+              providers.add(String(target.provider).toLowerCase());
+            }
+          });
+        });
+
+        if (mounted) {
+          setConnectedPlatforms(Array.from(providers));
+        }
+      } catch (error) {
+        if (mounted) {
+          setConnectedPlatforms([]);
+        }
+      }
+    }
+
+    loadConnections();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const connectedPlatformSet = useMemo(
+    () => new Set((connectedPlatforms || []).map((provider) => provider.toLowerCase())),
+    [connectedPlatforms],
+  );
 
   return (
     <div className="w-full font-sans text-gray-900">
 
       {/* Navigation Tabs */}
       <header className="mb-6">
-        <nav className="mx-auto flex w-full max-w-fit items-center bg-gray-50 rounded-xl p-1 border border-gray-100 overflow-x-auto">
+        <nav className="flex w-full items-center gap-1 rounded-xl border border-gray-100 bg-gray-50 p-1 overflow-x-auto">
           {["overview", "instagram", "linkedin", "youtube"].map((tab) => (
             <button
               key={tab}
@@ -100,15 +146,23 @@ const Analytics = () => {
         </nav>
       </header>
 
-      <main className="space-y-8">
+      <main className="space-y-6 sm:space-y-8">
 
-        {platform === "overview" && <OverviewTab />}
+        {platform === "overview" && (
+          <OverviewTab connectedPlatforms={connectedPlatforms} />
+        )}
 
-        {platform === "instagram" && <InstagramTab />}
+        {platform === "instagram" && (
+          <InstagramTab isConnected={connectedPlatformSet.has("instagram")} />
+        )}
 
-        {platform === "linkedin" && <LinkedinTab />}
+        {platform === "linkedin" && (
+          <LinkedinTab isConnected={connectedPlatformSet.has("linkedin")} />
+        )}
 
-        {platform === "youtube" && <YoutubeTab />}
+        {platform === "youtube" && (
+          <YoutubeTab isConnected={connectedPlatformSet.has("youtube")} />
+        )}
 
       </main>
     </div>

@@ -20,7 +20,14 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const YouTubeAnalytics = ({ overview, growth, videos, trafficSources, onRefresh }) => {
+const YouTubeAnalytics = ({
+  overview,
+  growth,
+  videos,
+  trafficSources,
+  onRefresh,
+  isConnected = true,
+}) => {
   const navigate = useNavigate();
   const safeGrowth = Array.isArray(growth) ? growth : [];
   const safeVideos = Array.isArray(videos) ? videos : [];
@@ -105,6 +112,33 @@ const YouTubeAnalytics = ({ overview, growth, videos, trafficSources, onRefresh 
     }
   };
 
+  if (!isConnected) {
+    return (
+      <div className="w-full flex items-center justify-center py-16">
+        <div className="w-full max-w-lg rounded-2xl border border-blue-100 bg-white px-6 py-8 text-center shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-800">Connect YouTube first</h2>
+          <p className="mt-2 text-sm text-slate-500">
+            Connect your YouTube account and schedule a video post to unlock analytics.
+          </p>
+          <div className="mt-5 flex flex-wrap justify-center gap-2">
+            <button
+              onClick={() => navigate("/accounts")}
+              className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"
+            >
+              Connect Account
+            </button>
+            <button
+              onClick={() => navigate("/schedule")}
+              className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50"
+            >
+              Schedule Post
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!hasData) {
     return (
       <div className="w-full flex items-center justify-center py-16">
@@ -122,7 +156,7 @@ const YouTubeAnalytics = ({ overview, growth, videos, trafficSources, onRefresh 
     <div className="w-full font-sans text-gray-900">
       <div>
         {/* Header Section */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <div className="bg-red-600 p-1 rounded-md text-white">
@@ -136,13 +170,13 @@ const YouTubeAnalytics = ({ overview, growth, videos, trafficSources, onRefresh 
               Detailed performance analysis for the last 30 days.
             </p>
           </div>
-          <div className="flex gap-3">
-            <div className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-500 shadow-sm">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-500 shadow-sm">
               Dec 01, 2023 - Dec 31, 2023
             </div>
             <button
               onClick={handleRefresh}
-              className="flex items-center gap-2 px-6 py-2 bg-[#7C3AED] text-white rounded-lg text-xs font-bold shadow-md shadow-violet-100 hover:bg-[#6D28D9] transition-all"
+              className="flex items-center gap-2 px-4 sm:px-6 py-2 bg-[#7C3AED] text-white rounded-lg text-xs font-bold shadow-md shadow-violet-100 hover:bg-[#6D28D9] transition-all"
             >
               Generate Report
             </button>
@@ -190,8 +224,8 @@ const YouTubeAnalytics = ({ overview, growth, videos, trafficSources, onRefresh 
         </div>
 
         {/* Audience Retention & Views Chart */}
-        <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm mb-8">
-          <div className="flex justify-between items-center mb-10">
+        <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-[24px] sm:rounded-[32px] border border-gray-100 shadow-sm mb-8">
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-8 sm:mb-10">
             <div>
               <h3 className="font-bold text-gray-900">
                 Audience Retention & Views
@@ -209,7 +243,7 @@ const YouTubeAnalytics = ({ overview, growth, videos, trafficSources, onRefresh 
               </button>
             </div>
           </div>
-          <div className="h-[350px]">
+          <div className="h-[260px] sm:h-[320px] lg:h-[350px]">
             {hasGrowthMetrics ? (
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={formattedGrowth}>
@@ -253,7 +287,7 @@ const YouTubeAnalytics = ({ overview, growth, videos, trafficSources, onRefresh 
               </div>
             )}
           </div>
-          <div className="flex justify-center gap-6 mt-4 text-[10px] font-bold">
+          <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mt-4 text-[10px] font-bold">
             <div className="flex items-center gap-1.5 text-violet-600">
               <div className="w-2 h-2 rounded-full bg-violet-600" /> Views
             </div>
@@ -265,10 +299,10 @@ const YouTubeAnalytics = ({ overview, growth, videos, trafficSources, onRefresh 
         </div>
 
         {/* Video Performance & Traffic Sources */}
-        <div className="grid grid-cols-12 gap-8 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 mb-8">
           {/* Recent Video Performance Table */}
-          <div className="col-span-12 lg:col-span-8 bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">
-            <div className="p-8 border-b border-gray-50 flex justify-between items-center">
+          <div className="lg:col-span-8 bg-white rounded-[24px] sm:rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">
+            <div className="p-4 sm:p-6 lg:p-8 border-b border-gray-50 flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center">
               <div>
                 <h3 className="font-bold text-lg text-gray-900">
                   Recent Video Performance
@@ -285,7 +319,7 @@ const YouTubeAnalytics = ({ overview, growth, videos, trafficSources, onRefresh 
               </button>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left">
+              <table className="w-full min-w-[620px] text-left">
                 <thead className="bg-gray-50/50 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                   <tr>
                     <th className="px-8 py-5">Video</th>
@@ -321,7 +355,7 @@ const YouTubeAnalytics = ({ overview, growth, videos, trafficSources, onRefresh 
                             )}
                           </div>
                           <div>
-                            <p className="text-sm font-bold text-gray-900 truncate max-w-[180px]">
+                            <p className="text-sm font-bold text-gray-900 truncate max-w-[180px] sm:max-w-[260px]">
                               {video.title}
                             </p>
                             <p className="text-[10px] text-gray-400 font-medium">
@@ -365,13 +399,13 @@ const YouTubeAnalytics = ({ overview, growth, videos, trafficSources, onRefresh 
           </div>
 
           {/* Traffic Sources Sidebar */}
-          <div className="col-span-12 lg:col-span-4 bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm flex flex-col">
+          <div className="lg:col-span-4 bg-white p-4 sm:p-6 lg:p-8 rounded-[24px] sm:rounded-[32px] border border-gray-100 shadow-sm flex flex-col">
             <h3 className="font-bold text-gray-900 mb-1">Traffic Sources</h3>
             <p className="text-gray-400 text-[11px] mb-8">
               Where your audience finds you
             </p>
 
-            <div className="relative w-40 h-40 mx-auto mb-10">
+            <div className="relative w-32 h-32 sm:w-40 sm:h-40 mx-auto mb-8 sm:mb-10">
               {/* Simplified Donut representing 84% Organic */}
               <div className="w-full h-full rounded-full border-[12px] border-gray-50 flex items-center justify-center">
                 <div className="absolute inset-0 rounded-full border-[12px] border-violet-600 border-t-transparent border-r-transparent rotate-45" />

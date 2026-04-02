@@ -90,8 +90,10 @@ const Overview = ({
   engagementDistribution,
   recentPosts,
   onRefresh,
+  connectedPlatforms = [],
 }) => {
   const navigate = useNavigate();
+  const hasConnectedAccounts = (connectedPlatforms || []).length > 0;
   const safeChartData = useMemo(() => {
     if (!chartData || !Array.isArray(chartData)) return [];
 
@@ -177,8 +179,33 @@ const Overview = ({
 
   return (
     <>
+      {!hasConnectedAccounts && (
+        <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50/40 px-4 py-4 sm:px-6">
+          <p className="text-sm font-semibold text-blue-900">
+            No connected social accounts yet
+          </p>
+          <p className="mt-1 text-sm text-blue-800/80">
+            Connect an account, then schedule a post to start seeing analytics.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              onClick={() => navigate("/accounts")}
+              className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"
+            >
+              Connect Account
+            </button>
+            <button
+              onClick={() => navigate("/schedule")}
+              className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50"
+            >
+              Schedule Post
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* HEADER */}
-      <div className="flex font-sans antialiased text-slate-900 justify-between items-start mb-8">
+      <div className="mb-8 flex flex-col gap-3 font-sans text-slate-900 antialiased sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-gray-900 mb-1">
             Analytics Overview
@@ -188,17 +215,17 @@ const Overview = ({
           </p>
         </div>
 
-        <div className="flex gap-3 pt-3">
+        <div className="flex flex-wrap gap-2 sm:gap-3 sm:pt-3">
           <button
             onClick={handleRefresh}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 sm:px-4"
           >
-            📅 Last 30 Days
+            Last 30 Days
           </button>
 
           <button
             onClick={handleExportReport}
-            className="flex items-center gap-2 px-4 py-2 bg-[#7C3AED] text-white rounded-lg text-xs font-bold shadow-lg hover:bg-[#6D28D9] transition-colors"
+            className="flex items-center gap-2 rounded-lg bg-[#7C3AED] px-3 py-2 text-xs font-bold text-white shadow-lg transition-colors hover:bg-[#6D28D9] sm:px-4"
           >
             Download Report <ArrowUpRight size={16} />
           </button>

@@ -1,22 +1,30 @@
 import { useEffect, useMemo, useState } from "react";
-import { Shield, Users, Building2, FileText, Link2, ScrollText, RefreshCcw } from "lucide-react";
+import { Shield, Users, Building2, FileText, Link2, ScrollText, RefreshCcw, Tags, Newspaper } from "lucide-react";
 import { toast } from "sonner";
 
 import {
+  createAdminIndustry,
+  createAdminNewsSource,
   createAdminOrganization,
   createAdminUser,
+  deleteAdminIndustry,
+  deleteAdminNewsSource,
   deleteAdminOrganization,
   deleteAdminPost,
   deleteAdminSocialAccount,
   deleteAdminUser,
   getAdminOverview,
   listAdminAuditLogs,
+  listAdminIndustries,
+  listAdminNewsSources,
   listAdminOrganizations,
   listAdminPosts,
   listAdminSocialAccounts,
   listAdminUsers,
   restoreAdminOrganization,
   restoreAdminPost,
+  updateAdminIndustry,
+  updateAdminNewsSource,
   updateAdminOrganization,
   updateAdminPost,
   updateAdminSocialAccount,
@@ -30,6 +38,8 @@ const tabs = [
   { id: "organizations", label: "Organizations", icon: Building2 },
   { id: "posts", label: "Posts", icon: FileText },
   { id: "accounts", label: "Social Accounts", icon: Link2 },
+  { id: "industries", label: "Industries", icon: Tags },
+  { id: "news", label: "News Sources", icon: Newspaper },
   { id: "audit", label: "Audit Logs", icon: ScrollText },
 ];
 
@@ -47,6 +57,18 @@ const emptyOrgForm = {
   tagline: "",
   industry: "",
   logo: null,
+};
+
+const emptyIndustryForm = {
+  name: "",
+  slug: "",
+};
+
+const emptyNewsSourceForm = {
+  name: "",
+  rss_url: "",
+  industry: "",
+  is_active: true,
 };
 
 function StatCard({ label, value, hint }) {
@@ -88,14 +110,21 @@ function AdminPanel() {
   const [organizations, setOrganizations] = useState([]);
   const [posts, setPosts] = useState([]);
   const [accounts, setAccounts] = useState([]);
+  const [industryRows, setIndustryRows] = useState([]);
+  const [newsSources, setNewsSources] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [industries, setIndustries] = useState([]);
   const [userForm, setUserForm] = useState(emptyUserForm);
   const [editingUserId, setEditingUserId] = useState(null);
   const [orgForm, setOrgForm] = useState(emptyOrgForm);
   const [editingOrgId, setEditingOrgId] = useState(null);
+  const [industryForm, setIndustryForm] = useState(emptyIndustryForm);
+  const [editingIndustryId, setEditingIndustryId] = useState(null);
+  const [newsSourceForm, setNewsSourceForm] = useState(emptyNewsSourceForm);
+  const [editingNewsSourceId, setEditingNewsSourceId] = useState(null);
   const [includeDeletedPosts, setIncludeDeletedPosts] = useState(true);
   const [includeDeletedOrgs, setIncludeDeletedOrgs] = useState(true);
+  const [includeInactiveNewsSources, setIncludeInactiveNewsSources] = useState(true);
 
   const loadOverview = async () => {
     const res = await getAdminOverview();
@@ -127,6 +156,16 @@ function AdminPanel() {
       } else if (tab === "accounts") {
         const res = await listAdminSocialAccounts({ q: query || undefined, page_size: 50 });
         setAccounts(res.data.results || []);
+      } else if (tab === "industries") {
+        const res = await listAdminIndustries({ q: query || undefined, page_size: 50 });
+        setIndustryRows(res.data.results || []);
+      } else if (tab === "news") {
+        const res = await listAdminNewsSources({
+          q: query || undefined,
+          include_inactive: includeInactiveNewsSources ? 1 : undefined,
+          page_size: 50,
+        });
+        setNewsSources(res.data.results || []);
       } else if (tab === "audit") {
         const res = await listAdminAuditLogs({ q: query || undefined, page_size: 50 });
         setAuditLogs(res.data.results || []);
@@ -145,7 +184,7 @@ function AdminPanel() {
 
   useEffect(() => {
     loadTab().catch(() => toast.error(`Failed to load ${activeTab}`));
-  }, [activeTab, includeDeletedPosts, includeDeletedOrgs]);
+  }, [activeTab, includeDeletedPosts, includeDeletedOrgs, includeInactiveNewsSources]);
 
   const summaryCards = useMemo(() => {
     if (!overview) return [];
@@ -210,6 +249,54 @@ function AdminPanel() {
       await loadOverview();
     } catch (error) {
       toast.error(error.response?.data?.name?.[0] || "Unable to save organization");
+    }
+  };
+
+  const submitIndustry = async () => {
+    try {
+      const payload = {
+        name: industryForm.name,
+        slug: industryForm.slug || undefined,
+      };
+
+      if (editingIndustryId) {
+        await updateAdminIndustry(editingIndustryId, payload);
+        toast.success("Industry updated");
+      } else {
+        await createAdminIndustry(payload);
+        toast.success("Industry created");
+      }
+
+      setIndustryForm(emptyIndustryForm);
+      setEditingIndustryId(null);
+      await loadTab("industries");
+    } catch (error) {
+      toast.error(error.response?.data?.name?.[0] || error.response?.data?.slug?.[0] || "Unable to save industry");
+    }
+  };
+
+  const submitNewsSource = async () => {
+    try {
+      const payload = {
+        name: newsSourceForm.name,
+        rss_url: newsSourceForm.rss_url,
+        industry: newsSourceForm.industry || null,
+        is_active: Boolean(newsSourceForm.is_active),
+      };
+
+      if (editingNewsSourceId) {
+        await updateAdminNewsSource(editingNewsSourceId, payload);
+        toast.success("News source updated");
+      } else {
+        await createAdminNewsSource(payload);
+        toast.success("News source created");
+      }
+
+      setNewsSourceForm(emptyNewsSourceForm);
+      setEditingNewsSourceId(null);
+      await loadTab("news");
+    } catch (error) {
+      toast.error(error.response?.data?.rss_url?.[0] || error.response?.data?.name?.[0] || "Unable to save news source");
     }
   };
 
@@ -288,6 +375,17 @@ function AdminPanel() {
                 className="mr-2"
               />
               Include archived organizations
+            </label>
+          ) : null}
+          {activeTab === "news" ? (
+            <label className="text-sm text-slate-600">
+              <input
+                type="checkbox"
+                checked={includeInactiveNewsSources}
+                onChange={(e) => setIncludeInactiveNewsSources(e.target.checked)}
+                className="mr-2"
+              />
+              Include inactive sources
             </label>
           ) : null}
         </form>
@@ -585,6 +683,208 @@ function AdminPanel() {
             </tbody>
           </table>
         </TableShell>
+      ) : null}
+
+      {activeTab === "industries" ? (
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h3 className="text-sm font-semibold text-slate-900">{editingIndustryId ? "Edit Industry" : "Create Industry"}</h3>
+            <div className="mt-4 space-y-3">
+              <input
+                className="w-full rounded-xl border border-slate-300 px-4 py-2 text-sm"
+                placeholder="Industry name"
+                value={industryForm.name}
+                onChange={(e) => setIndustryForm((p) => ({ ...p, name: e.target.value }))}
+              />
+              <input
+                className="w-full rounded-xl border border-slate-300 px-4 py-2 text-sm"
+                placeholder="Slug (optional)"
+                value={industryForm.slug}
+                onChange={(e) => setIndustryForm((p) => ({ ...p, slug: e.target.value }))}
+              />
+              <div className="flex gap-2">
+                <button onClick={submitIndustry} type="button" className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white">
+                  {editingIndustryId ? "Save Industry" : "Create Industry"}
+                </button>
+                <button onClick={() => { setIndustryForm(emptyIndustryForm); setEditingIndustryId(null); }} type="button" className="rounded-xl border border-slate-300 px-4 py-2 text-sm text-slate-600">
+                  Reset
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <TableShell>
+            <table className="min-w-full text-sm">
+              <thead className="bg-slate-50 text-left text-slate-500">
+                <tr>
+                  <th className="px-6 py-3">Name</th>
+                  <th className="px-6 py-3">Slug</th>
+                  <th className="px-6 py-3">News Sources</th>
+                  <th className="px-6 py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {industryRows.map((industry) => (
+                  <tr key={industry.id} className="border-t border-slate-100">
+                    <td className="px-6 py-3">{industry.name}</td>
+                    <td className="px-6 py-3">{industry.slug}</td>
+                    <td className="px-6 py-3">{industry.source_count}</td>
+                    <td className="px-6 py-3">
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingIndustryId(industry.id);
+                            setIndustryForm({ name: industry.name || "", slug: industry.slug || "" });
+                          }}
+                          className="text-blue-600"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await deleteAdminIndustry(industry.id);
+                            toast.success("Industry deleted");
+                            await loadTab("industries");
+                          }}
+                          className="text-rose-600"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableShell>
+        </div>
+      ) : null}
+
+      {activeTab === "news" ? (
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h3 className="text-sm font-semibold text-slate-900">{editingNewsSourceId ? "Edit News Source" : "Create News Source"}</h3>
+            <div className="mt-4 space-y-3">
+              <input
+                className="w-full rounded-xl border border-slate-300 px-4 py-2 text-sm"
+                placeholder="Source name"
+                value={newsSourceForm.name}
+                onChange={(e) => setNewsSourceForm((p) => ({ ...p, name: e.target.value }))}
+              />
+              <input
+                className="w-full rounded-xl border border-slate-300 px-4 py-2 text-sm"
+                placeholder="RSS URL"
+                value={newsSourceForm.rss_url}
+                onChange={(e) => setNewsSourceForm((p) => ({ ...p, rss_url: e.target.value }))}
+              />
+              <select
+                className="w-full rounded-xl border border-slate-300 px-4 py-2 text-sm"
+                value={newsSourceForm.industry}
+                onChange={(e) => setNewsSourceForm((p) => ({ ...p, industry: e.target.value }))}
+              >
+                <option value="">Select industry</option>
+                {industries.map((industry) => (
+                  <option key={industry.id} value={industry.id}>
+                    {industry.name}
+                  </option>
+                ))}
+              </select>
+              <label className="flex items-center gap-2 text-sm text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={Boolean(newsSourceForm.is_active)}
+                  onChange={(e) => setNewsSourceForm((p) => ({ ...p, is_active: e.target.checked }))}
+                />
+                Source active
+              </label>
+              <div className="flex gap-2">
+                <button onClick={submitNewsSource} type="button" className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white">
+                  {editingNewsSourceId ? "Save Source" : "Create Source"}
+                </button>
+                <button
+                  onClick={() => {
+                    setNewsSourceForm(emptyNewsSourceForm);
+                    setEditingNewsSourceId(null);
+                  }}
+                  type="button"
+                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm text-slate-600"
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <TableShell>
+            <table className="min-w-full text-sm">
+              <thead className="bg-slate-50 text-left text-slate-500">
+                <tr>
+                  <th className="px-6 py-3">Name</th>
+                  <th className="px-6 py-3">Industry</th>
+                  <th className="px-6 py-3">Status</th>
+                  <th className="px-6 py-3">Articles</th>
+                  <th className="px-6 py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {newsSources.map((source) => (
+                  <tr key={source.id} className="border-t border-slate-100">
+                    <td className="px-6 py-3">
+                      <div className="font-medium text-slate-800">{source.name}</div>
+                      <div className="text-xs text-slate-500">{source.rss_url}</div>
+                    </td>
+                    <td className="px-6 py-3">{source.industry_name || "-"}</td>
+                    <td className="px-6 py-3">{source.is_active ? "Active" : "Inactive"}</td>
+                    <td className="px-6 py-3">{source.article_count}</td>
+                    <td className="px-6 py-3">
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingNewsSourceId(source.id);
+                            setNewsSourceForm({
+                              name: source.name || "",
+                              rss_url: source.rss_url || "",
+                              industry: source.industry || "",
+                              is_active: Boolean(source.is_active),
+                            });
+                          }}
+                          className="text-blue-600"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await updateAdminNewsSource(source.id, { is_active: !source.is_active });
+                            toast.success("Source status updated");
+                            await loadTab("news");
+                          }}
+                          className="text-amber-600"
+                        >
+                          {source.is_active ? "Deactivate" : "Activate"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await deleteAdminNewsSource(source.id);
+                            toast.success("News source deleted");
+                            await loadTab("news");
+                          }}
+                          className="text-rose-600"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableShell>
+        </div>
       ) : null}
 
       {activeTab === "audit" ? (

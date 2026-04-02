@@ -23,11 +23,17 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const LinkedInAnalytics = ({ overview, growth, posts, onRefresh }) => {
+const LinkedInAnalytics = ({
+  overview,
+  growth,
+  posts,
+  onRefresh,
+  isConnected = true,
+  analyticsApproved = false,
+}) => {
   const navigate = useNavigate();
   const hasGrowthMetrics = (growth || []).length > 0;
   const hasPostMetrics = (posts || []).length > 0;
-  const hasData = Boolean(overview) || hasGrowthMetrics || hasPostMetrics;
   // Mock data for the "Top Professional Functions" chart as per the image
   const professionalFunctions = [
     { role: "Engineering", width: "95%", color: "bg-[#7C3AED]" },
@@ -110,20 +116,65 @@ const LinkedInAnalytics = ({ overview, growth, posts, onRefresh }) => {
     }
     window.open(postUrl, "_blank", "noopener,noreferrer");
   };
-  if (!hasData) {
+  if (!analyticsApproved) {
     return (
       <div className="w-full flex items-center justify-center py-16">
-        <div className="bg-white border border-blue-100 rounded-2xl p-10 text-center shadow-sm max-w-lg">
+        <div className="bg-white border border-blue-100 rounded-2xl p-8 sm:p-10 text-center shadow-sm max-w-lg">
           <h2 className="text-lg font-bold text-gray-900 mb-2">
-            LinkedIn Analytics Unavailable
+            LinkedIn Analytics Coming Soon
           </h2>
           <p className="text-gray-500 text-sm">
-            LinkedIn currently restricts analytics access for most apps. Posting
-            and scheduling are supported, but engagement analytics require
-            additional LinkedIn permissions.
+            LinkedIn currently restricts analytics access for many apps. We will enable
+            full insights once platform approval is granted.
           </p>
+          {!isConnected && (
+            <p className="mt-3 text-xs text-gray-500">
+              Connect your LinkedIn account now so it is ready when analytics access is enabled.
+            </p>
+          )}
+          <div className="mt-5 flex flex-wrap justify-center gap-2">
+            <button
+              onClick={() => navigate("/accounts")}
+              className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"
+            >
+              Connect Account
+            </button>
+            <button
+              onClick={() => navigate("/schedule")}
+              className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50"
+            >
+              Schedule Post
+            </button>
+          </div>
           <div className="mt-6 text-xs text-gray-400">
-            Once LinkedIn grants analytics access, insights will appear here.
+            Once approved, analytics cards and charts will appear here automatically.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isConnected) {
+    return (
+      <div className="w-full flex items-center justify-center py-16">
+        <div className="bg-white border border-blue-100 rounded-2xl p-8 text-center shadow-sm max-w-lg">
+          <h2 className="text-lg font-bold text-gray-900">Connect LinkedIn first</h2>
+          <p className="mt-2 text-sm text-gray-500">
+            Connect your LinkedIn account and schedule at least one post to start collecting data.
+          </p>
+          <div className="mt-5 flex flex-wrap justify-center gap-2">
+            <button
+              onClick={() => navigate("/accounts")}
+              className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"
+            >
+              Connect Account
+            </button>
+            <button
+              onClick={() => navigate("/schedule")}
+              className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50"
+            >
+              Schedule Post
+            </button>
           </div>
         </div>
       </div>
@@ -134,7 +185,7 @@ const LinkedInAnalytics = ({ overview, growth, posts, onRefresh }) => {
     <div className="w-full font-sans text-gray-900">
       <div>
         {/* Header Section */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">
               LinkedIn Insights
@@ -143,7 +194,7 @@ const LinkedInAnalytics = ({ overview, growth, posts, onRefresh }) => {
               Professional network performance and B2B engagement metrics.
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             <button
               onClick={handleExport}
               className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-600 shadow-sm"
@@ -185,10 +236,10 @@ const LinkedInAnalytics = ({ overview, growth, posts, onRefresh }) => {
         </div>
 
         {/* Growth & Functions Section */}
-        <div className="grid grid-cols-12 gap-8 mb-8">
+        <div className="mb-8 grid grid-cols-1 gap-5 lg:grid-cols-12 lg:gap-8">
           {/* Professional Growth Chart */}
-          <div className="col-span-12 lg:col-span-8 bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm">
-            <div className="flex justify-between items-center mb-10">
+          <div className="lg:col-span-8 bg-white p-4 sm:p-6 lg:p-8 rounded-[24px] sm:rounded-[32px] border border-gray-100 shadow-sm">
+            <div className="mb-8 sm:mb-10 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
               <div>
                 <h3 className="font-bold text-gray-900">Professional Growth</h3>
                 <p className="text-gray-400 text-[11px]">
@@ -206,7 +257,7 @@ const LinkedInAnalytics = ({ overview, growth, posts, onRefresh }) => {
                 </div>
               </div>
             </div>
-            <div className="h-[350px]">
+            <div className="h-[260px] sm:h-[320px] lg:h-[350px]">
               {hasGrowthMetrics ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={growth}>
@@ -251,7 +302,7 @@ const LinkedInAnalytics = ({ overview, growth, posts, onRefresh }) => {
           </div>
 
           {/* Top Professional Functions */}
-          <div className="col-span-12 lg:col-span-4 bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm flex flex-col">
+          <div className="lg:col-span-4 bg-white p-4 sm:p-6 lg:p-8 rounded-[24px] sm:rounded-[32px] border border-gray-100 shadow-sm flex flex-col">
             <h3 className="font-bold text-gray-900 mb-1">
               Top Professional Functions
             </h3>
@@ -292,8 +343,8 @@ const LinkedInAnalytics = ({ overview, growth, posts, onRefresh }) => {
         </div>
 
         {/* Analytics Table */}
-        <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">
-          <div className="p-8 border-b border-gray-50 flex justify-between items-center">
+        <div className="bg-white rounded-[24px] sm:rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">
+          <div className="p-4 sm:p-6 lg:p-8 border-b border-gray-50 flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center">
             <div>
               <h3 className="font-bold text-lg text-gray-900">
                 Recent Post Analytics
@@ -310,7 +361,7 @@ const LinkedInAnalytics = ({ overview, growth, posts, onRefresh }) => {
             </button>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full min-w-[760px] text-left">
               <thead className="bg-gray-50/50 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                 <tr>
                   <th className="px-8 py-5">Post Title</th>
