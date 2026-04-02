@@ -50,7 +50,7 @@ class YouTubePublisher(BasePublisher):
                 },
                 "status": {"privacyStatus": "public"},
             },
-            media_body=MediaFileUpload(media.file.path, chunksize=-1, resumable=True),
+            media_body=MediaFileUpload(media.file.url, chunksize=-1, resumable=True),
         )
 
         response = request.execute()
