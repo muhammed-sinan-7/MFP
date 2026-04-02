@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UniSocial (MFP) - Official Project Overview</title>
+  <style>
+    body { font-family: Inter, Arial, sans-serif; line-height: 1.6; margin: 32px auto; max-width: 920px; color: #111827; }
+    h1, h2, h3 { color: #0f172a; }
+    h1 { font-size: 32px; margin-bottom: 8px; }
+    h2 { margin-top: 30px; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; }
+    p, li { font-size: 14px; }
+    ul { margin-top: 6px; }
+    code { background: #f3f4f6; padding: 2px 6px; border-radius: 6px; font-family: Consolas, monospace; font-size: 12px; }
+    .muted { color: #6b7280; }
+    .callout { background: #eff6ff; border: 1px solid #bfdbfe; padding: 12px 14px; border-radius: 10px; margin: 12px 0 18px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #e5e7eb; text-align: left; padding: 8px 10px; font-size: 13px; vertical-align: top; }
+    th { background: #f8fafc; }
+  </style>
+</head>
+<body>
+  <h1>UniSocial (MFP) - Official Project Overview</h1>
+  <p class="muted">Last updated: <code>2026-04-02</code></p>
+
+  <div class="callout">
+    <strong>Notion import</strong><br />
+    In Notion: <code>Import -> HTML</code> and select this file.
+  </div>
+
+  <h2>1) Project Summary</h2>
+  <p>UniSocial (MFP) is a multi-tenant social media management platform for organizations to connect accounts, schedule content, and track performance in one workspace.</p>
+  <ul>
+    <li>Auth + onboarding + org roles</li>
+    <li>Multi-platform social account integrations</li>
+    <li>Scheduling + async publishing</li>
+    <li>Analytics dashboards</li>
+    <li>News feed + AI content assistance</li>
+    <li>Audit + platform admin controls</li>
+  </ul>
+
+  <h2>2) Core Product Features</h2>
+  <ul>
+    <li>Email OTP authentication and secure session lifecycle</li>
+    <li>Organization management with role-based access</li>
+    <li>Social account OAuth and publishing target sync</li>
+    <li>Post scheduling and cross-platform publishing</li>
+    <li>Analytics overview and platform-specific insights</li>
+    <li>Industry-driven news feed</li>
+    <li>AI-assisted post generation</li>
+    <li>Platform Admin: users, organizations, posts, social accounts, industries, news sources, audit logs</li>
+  </ul>
+
+  <h2>3) Technology Stack</h2>
+  <table>
+    <thead>
+      <tr><th>Layer</th><th>Primary Tools</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Frontend</td><td>React 19, Vite, Tailwind, Axios, Recharts</td></tr>
+      <tr><td>Backend</td><td>Django, DRF, SimpleJWT</td></tr>
+      <tr><td>Data</td><td>PostgreSQL, Redis</td></tr>
+      <tr><td>Async</td><td>Celery, Celery Beat, Flower</td></tr>
+      <tr><td>Infra</td><td>Docker Compose, Nginx, Certbot</td></tr>
+      <tr><td>Storage</td><td>AWS S3 (django-storages)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>4) Architecture (High Level)</h2>
+  <ol>
+    <li>Frontend SPA calls backend APIs.</li>
+    <li>Nginx handles HTTPS and proxies to Django.</li>
+    <li>Django executes auth/business logic and DB access.</li>
+    <li>Celery workers process background jobs.</li>
+    <li>Redis supports caching and queue transport.</li>
+  </ol>
+
+  <h2>5) Security Essentials</h2>
+  <ul>
+    <li>JWT access token + HttpOnly refresh cookie</li>
+    <li>Refresh rotation and blacklist</li>
+    <li>OTP verification with cooldown and attempt controls</li>
+    <li>Encrypted social provider token storage</li>
+    <li>CORS/CSRF and secure cookie controls</li>
+    <li>Organization-scoped authorization + role checks</li>
+    <li>Immutable audit logs</li>
+  </ul>
+
+  <h2>6) Session Essentials</h2>
+  <ul>
+    <li>Access token in Bearer header from frontend API client</li>
+    <li>Refresh token in cookie, refreshed via <code>/api/v1/auth/token/refresh/</code></li>
+    <li>Frontend refresh de-duplication prevents race conditions</li>
+    <li>401 refresh failure clears session and redirects to login</li>
+  </ul>
+
+  <h2>7) Scheduling and Publishing Essentials</h2>
+  <ul>
+    <li>Scheduler uses <code>publishing_target_ids</code> to map each post to exact account/provider</li>
+    <li>Backend validates target ownership and schedule time</li>
+    <li>Celery dispatches due posts every minute</li>
+    <li>Provider publishers handle Instagram/LinkedIn/YouTube publish logic</li>
+    <li>Status lifecycle: <code>pending -> processing -> success/failed</code></li>
+  </ul>
+
+  <h2>8) Analytics Essentials</h2>
+  <ul>
+    <li>Periodic analytics sync jobs for published posts</li>
+    <li>Current metrics + historical snapshots</li>
+    <li>Redis-cached dashboard and platform analytics endpoints</li>
+  </ul>
+
+  <h2>9) API Groups</h2>
+  <ul>
+    <li><code>/api/v1/auth/</code></li>
+    <li><code>/api/v1/organizations/</code></li>
+    <li><code>/api/v1/social/</code></li>
+    <li><code>/api/v1/posts/</code></li>
+    <li><code>/api/v1/analytics/</code></li>
+    <li><code>/api/v1/news/</code></li>
+    <li><code>/api/v1/audit/</code></li>
+    <li><code>/api/v1/ai/</code></li>
+    <li><code>/api/v1/admin-panel/</code></li>
+  </ul>
+
+  <h2>10) Deployment and Operations Essentials</h2>
+  <ul>
+    <li>Deploy via Docker Compose</li>
+    <li>Nginx terminates TLS and proxies to web service</li>
+    <li>Health endpoints: <code>/health/</code>, <code>/ready/</code></li>
+    <li>API docs: <code>/swagger/</code>, <code>/redoc/</code></li>
+    <li>Queue monitor: Flower</li>
+  </ul>
+
+  <h2>11) Current Focus Areas</h2>
+  <ul>
+    <li>Ongoing mobile responsiveness refinements</li>
+    <li>LinkedIn analytics limitations due provider permissions</li>
+    <li>CI/CD and test coverage expansion</li>
+  </ul>
+
+  <h2>12) Reference Documents</h2>
+  <ul>
+    <li><code>PROJECT_OFFICIAL_OVERVIEW.md</code> (official brief markdown)</li>
+    <li><code>PROJECT_DOCUMENTATION_NOTION_READY.md</code> (full technical deep doc)</li>
+    <li><code>NOTION_IMPORT_PROJECT_DOC.html</code> (full Notion HTML deep doc)</li>
+  </ul>
+</body>
+</html>

@@ -1,246 +1,544 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>UniSocial / MFP - Project Documentation</title>
+  <title>UniSocial / MFP - Complete Project Documentation (Notion Import)</title>
   <style>
-    body { font-family: Inter, Arial, sans-serif; line-height: 1.6; margin: 32px auto; max-width: 980px; color: #111827; }
-    h1, h2, h3 { color: #0f172a; }
-    h1 { font-size: 32px; margin-bottom: 8px; }
-    h2 { margin-top: 32px; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; }
-    h3 { margin-top: 20px; }
+    body { font-family: Inter, Arial, sans-serif; line-height: 1.65; margin: 30px auto; max-width: 1050px; color: #111827; }
+    h1, h2, h3, h4 { color: #0f172a; }
+    h1 { font-size: 34px; margin-bottom: 4px; }
+    h2 { margin-top: 34px; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; font-size: 25px; }
+    h3 { margin-top: 20px; font-size: 19px; }
+    h4 { margin-top: 16px; font-size: 16px; }
     p, li { font-size: 14px; }
     ul, ol { margin-top: 4px; }
-    code { background: #f3f4f6; padding: 2px 6px; border-radius: 6px; font-family: Consolas, monospace; font-size: 13px; }
+    code { background: #f3f4f6; padding: 2px 6px; border-radius: 6px; font-family: Consolas, monospace; font-size: 12.5px; }
     .muted { color: #6b7280; }
-    .callout { background: #eff6ff; border: 1px solid #bfdbfe; padding: 12px 14px; border-radius: 10px; margin: 12px 0; }
+    .callout { background: #eff6ff; border: 1px solid #bfdbfe; padding: 12px 14px; border-radius: 10px; margin: 10px 0 16px; }
+    .warning { background: #fff7ed; border: 1px solid #fdba74; }
+    .toc { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #e5e7eb; text-align: left; padding: 8px 10px; font-size: 13px; }
+    th, td { border: 1px solid #e5e7eb; text-align: left; padding: 8px 10px; font-size: 13px; vertical-align: top; }
     th { background: #f8fafc; }
     hr { border: none; border-top: 1px solid #e5e7eb; margin: 24px 0; }
+    .small { font-size: 12px; }
   </style>
 </head>
 <body>
-  <h1>UniSocial / MFP - Full Project Documentation</h1>
-  <p class="muted">Generated for Notion Import | Source snapshot date: <code>2026-04-02</code></p>
+  <h1>UniSocial / MFP - Complete Project Documentation</h1>
+  <p class="muted">Notion Import Version | Codebase snapshot date: <code>2026-04-02</code></p>
 
   <div class="callout">
-    <strong>How to import into Notion</strong><br />
-    In Notion: <code>Import -> HTML</code> and select this file.<br />
-    This keeps headings, tables, and section structure cleaner than copy-paste markdown.
+    <strong>How to import this into Notion</strong><br />
+    In Notion, choose <code>Import -> HTML</code> and select this file.<br />
+    This file is designed to preserve structure (headings/tables/checklists) better than markdown copy-paste.
   </div>
 
-  <h2>1. Product Overview</h2>
-  <p><strong>MFP</strong> (UI brand: <strong>UniSocial</strong>) is a multi-tenant social media management SaaS.</p>
+  <div class="callout warning">
+    <strong>Security note</strong>: if real keys were ever committed in <code>.env</code>, rotate all secrets (DB/AWS/OAuth/SMTP/API keys) immediately.
+  </div>
+
+  <h2>Table of Contents</h2>
+  <div class="toc">
+    <ol>
+      <li>Executive Summary</li>
+      <li>Product Goals and Why Architecture Is Designed This Way</li>
+      <li>Monorepo Structure</li>
+      <li>Infrastructure and Runtime Services</li>
+      <li>Backend Stack and Libraries</li>
+      <li>Frontend Stack and Libraries</li>
+      <li>Data Model and Multi-Tenancy</li>
+      <li>Authentication, Session, and Security</li>
+      <li>Organization, Roles, and Authorization</li>
+      <li>Social Account Integration Flows</li>
+      <li>Scheduling and Publishing Internals</li>
+      <li>Analytics Data Pipeline</li>
+      <li>News Ingestion Pipeline</li>
+      <li>AI Generation Pipeline</li>
+      <li>Platform Admin Module (including Industry/News Source CRUD)</li>
+      <li>Frontend Architecture and Route Map</li>
+      <li>Frontend Service Layer and State Flow</li>
+      <li>API Endpoint Map</li>
+      <li>Async Jobs and Celery Beat Schedule</li>
+      <li>Caching and Performance Strategy</li>
+      <li>Observability and Health Checks</li>
+      <li>Deployment Topology and Environment Variables</li>
+      <li>Common Production Issues and Root Causes</li>
+      <li>Developer Runbooks</li>
+      <li>Known Gaps / Future Improvements</li>
+    </ol>
+  </div>
+
+  <h2>1) Executive Summary</h2>
+  <p><strong>MFP</strong> (brand: <strong>UniSocial</strong>) is a multi-tenant social media management SaaS that allows organizations to connect social accounts, schedule posts across platforms, and view analytics from a single workspace.</p>
   <ul>
-    <li>User auth with OTP + JWT session lifecycle</li>
-    <li>Organization onboarding and role-based access control</li>
-    <li>Social connections: Meta/Instagram, LinkedIn, YouTube</li>
-    <li>Cross-platform post creation, scheduling, async publishing</li>
-    <li>Analytics aggregation and dashboard reporting</li>
-    <li>Industry news ingestion + feed display</li>
-    <li>AI-assisted post generation</li>
-    <li>Audit log and platform admin operations</li>
+    <li>Authentication + OTP + onboarding</li>
+    <li>Organization and role-based access</li>
+    <li>Meta/Instagram, LinkedIn, YouTube account integrations</li>
+    <li>Post scheduling and asynchronous publishing workers</li>
+    <li>Analytics dashboard + per-platform analytics</li>
+    <li>Industry news feed ingestion</li>
+    <li>AI-assisted content generation</li>
+    <li>Audit trail and platform admin control center</li>
   </ul>
 
-  <h2>2. High-Level Architecture</h2>
+  <h2>2) Product Goals and Why Architecture Is Designed This Way</h2>
+  <h3>Business goals</h3>
+  <ul>
+    <li>Centralize multi-platform publishing in one workspace.</li>
+    <li>Reduce manual effort and platform switching.</li>
+    <li>Give organization-level governance and analytics.</li>
+    <li>Enable safe collaboration via role permissions.</li>
+  </ul>
+  <h3>Technical goals</h3>
+  <ul>
+    <li>Keep interactive APIs fast while provider calls can be slow.</li>
+    <li>Use async processing for publishing and sync workflows.</li>
+    <li>Ensure strict organization data isolation.</li>
+    <li>Support cloud deployment and scaling with containers.</li>
+  </ul>
+  <h3>Why Celery + Redis + cache are used</h3>
+  <ul>
+    <li>Provider APIs (Meta/LinkedIn/YouTube) are network-bound and can timeout.</li>
+    <li>Publishing and analytics sync must continue even if user closes browser.</li>
+    <li>Dashboard endpoints need cache to avoid repeated heavy aggregation.</li>
+  </ul>
+
+  <h2>3) Monorepo Structure</h2>
   <table>
-    <thead>
-      <tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr>
-    </thead>
+    <thead><tr><th>Path</th><th>Purpose</th></tr></thead>
     <tbody>
-      <tr><td>Frontend</td><td>React + Vite + Tailwind</td><td>SPA UI and route shell</td></tr>
-      <tr><td>Backend</td><td>Django + DRF</td><td>API, business logic, tenancy</td></tr>
-      <tr><td>DB</td><td>PostgreSQL</td><td>Primary relational store</td></tr>
-      <tr><td>Cache/Broker</td><td>Redis</td><td>Caching + Celery queue backend</td></tr>
-      <tr><td>Workers</td><td>Celery + Beat</td><td>Async publish/sync/cleanup jobs</td></tr>
-      <tr><td>Proxy</td><td>Nginx</td><td>TLS termination + upstream routing</td></tr>
-      <tr><td>Storage</td><td>AWS S3</td><td>Media/object storage</td></tr>
-      <tr><td>Monitoring</td><td>Prometheus + Sentry + Flower</td><td>Health, metrics, task visibility</td></tr>
+      <tr><td><code>mfp_backend/</code></td><td>Django backend APIs, models, Celery tasks</td></tr>
+      <tr><td><code>mfp_frontend/</code></td><td>React SPA, page components, API clients</td></tr>
+      <tr><td><code>docker-compose.yml</code></td><td>Container orchestration for web/db/redis/workers/nginx</td></tr>
+      <tr><td><code>PROJECT_DOCUMENTATION_NOTION_READY.md</code></td><td>Long markdown documentation</td></tr>
+      <tr><td><code>NOTION_IMPORT_PROJECT_DOC.html</code></td><td>Notion import-friendly full documentation</td></tr>
     </tbody>
   </table>
 
-  <h3>Runtime Services (Docker Compose)</h3>
-  <ul>
-    <li><code>web</code>, <code>db</code>, <code>redis</code>, <code>celery</code>, <code>celery_beat</code>, <code>flower</code>, <code>nginx</code>, <code>certbot</code></li>
-  </ul>
-
-  <h2>3. Repository Structure</h2>
-  <ul>
-    <li><code>mfp_backend/</code> - Django backend</li>
-    <li><code>mfp_frontend/</code> - React frontend</li>
-    <li><code>docker-compose.yml</code> - orchestration</li>
-    <li><code>PROJECT_DOCUMENTATION_NOTION_READY.md</code> - full markdown docs</li>
-    <li><code>NOTION_IMPORT_PROJECT_DOC.html</code> - this import file</li>
-  </ul>
-
-  <h2>4. Security and Session Design</h2>
-  <h3>Authentication Pattern</h3>
-  <ul>
-    <li>Access token: JWT bearer (short TTL: 15 minutes)</li>
-    <li>Refresh token: HttpOnly cookie (default 7 days, remember-me extends to 30 days)</li>
-    <li>Refresh rotation and blacklist enabled via SimpleJWT settings</li>
-  </ul>
-
-  <h3>Why this was implemented</h3>
-  <ul>
-    <li>Reduces XSS token exposure by keeping refresh token out of JS-accessible storage</li>
-    <li>Balances user convenience and security with short-lived access tokens</li>
-    <li>Supports seamless background refresh and cross-tab consistency</li>
-  </ul>
-
-  <h3>OTP Security</h3>
-  <ul>
-    <li>OTP stored as HMAC digest, never plain text</li>
-    <li>Attempt limit + cooldown + expiry</li>
-    <li>Unique active OTP constraint per user and purpose</li>
-  </ul>
-
-  <h3>Cookie/CORS/CSRF</h3>
-  <ul>
-    <li>Environment-driven cookie domain, secure, and SameSite behavior</li>
-    <li>Credentialed CORS enabled</li>
-    <li>Trusted origins configured for CSRF</li>
-  </ul>
-
-  <h3>Credential Protection</h3>
-  <ul>
-    <li>Provider tokens are encrypted in DB (<code>django-encrypted-model-fields</code>)</li>
-    <li>Password hashes managed by Django auth system</li>
-  </ul>
-
-  <h2>5. Data Model Overview</h2>
+  <h2>4) Infrastructure and Runtime Services</h2>
   <table>
-    <thead>
-      <tr><th>Domain</th><th>Main Models</th><th>Notes</th></tr>
-    </thead>
+    <thead><tr><th>Service</th><th>Image/Runtime</th><th>Responsibility</th></tr></thead>
     <tbody>
-      <tr><td>Identity</td><td><code>User</code>, <code>OTPToken</code></td><td>Email-first auth, verification + reset OTP</td></tr>
-      <tr><td>Tenancy</td><td><code>Organization</code>, <code>OrganizationMember</code></td><td>Role-based org isolation</td></tr>
-      <tr><td>Social</td><td><code>SocialAccount</code>, <code>PublishingTarget</code>, <code>MetaPage</code>, <code>LinkedInOrganization</code></td><td>OAuth-linked account graph</td></tr>
-      <tr><td>Publishing</td><td><code>Post</code>, <code>PostPlatform</code>, <code>PostPlatformMedia</code></td><td>One post -> many platform jobs</td></tr>
-      <tr><td>Analytics</td><td><code>PostPlatformAnalytics</code>, <code>PostPlatformAnalyticsSnapshot</code></td><td>Current + historical metrics</td></tr>
-      <tr><td>News</td><td><code>NewsSource</code>, <code>NewsArticle</code></td><td>Industry-based ingestion</td></tr>
-      <tr><td>Audit</td><td><code>AuditLog</code></td><td>Immutable event records</td></tr>
+      <tr><td><code>web</code></td><td>Python + Gunicorn</td><td>Django API process</td></tr>
+      <tr><td><code>db</code></td><td>PostgreSQL 15</td><td>Persistent relational data</td></tr>
+      <tr><td><code>redis</code></td><td>Redis 7</td><td>Cache + Celery broker/result backend</td></tr>
+      <tr><td><code>celery</code></td><td>Celery worker</td><td>Publish/sync/background jobs</td></tr>
+      <tr><td><code>celery_beat</code></td><td>Celery beat</td><td>Schedules periodic jobs</td></tr>
+      <tr><td><code>flower</code></td><td>Celery Flower</td><td>Queue monitoring UI</td></tr>
+      <tr><td><code>nginx</code></td><td>Nginx latest</td><td>TLS termination + reverse proxy</td></tr>
+      <tr><td><code>certbot</code></td><td>Certbot</td><td>Certificate renewals/challenges</td></tr>
     </tbody>
   </table>
 
-  <h2>6. How Scheduling Works (Deep Explanation)</h2>
-  <h3>How account selection is determined</h3>
-  <p>The scheduler does not guess account/provider. It uses explicit FK chain:</p>
-  <p><code>PostPlatform -> PublishingTarget -> SocialAccount -> credentials</code></p>
-
-  <h3>Create flow</h3>
+  <h3>End-to-end request flow</h3>
   <ol>
-    <li>Frontend sends <code>publishing_target_ids[]</code> + media + caption + schedule time.</li>
-    <li>Backend validates targets belong to requesting org and are active.</li>
-    <li>One <code>PostPlatform</code> row is created per target.</li>
-    <li>Media rows are attached and provider constraints validated.</li>
+    <li>User opens frontend app domain.</li>
+    <li>Frontend calls API domain via Axios.</li>
+    <li>Nginx proxies to Django web service.</li>
+    <li>Django validates JWT, resolves organization context, executes endpoint logic.</li>
+    <li>Heavy work is queued to Celery through Redis.</li>
+    <li>Worker writes status/metrics back to PostgreSQL.</li>
   </ol>
 
-  <h3>Dispatch and publish flow</h3>
-  <ol>
-    <li>Beat task runs every minute and picks due jobs.</li>
-    <li>Worker locks row for idempotency (<code>select_for_update</code>).</li>
-    <li>Provider-specific publisher executes (Instagram/LinkedIn/YouTube).</li>
-    <li>Success/failure/retry metadata is persisted on each platform row.</li>
-  </ol>
+  <h2>5) Backend Stack and Libraries</h2>
+  <ul>
+    <li>Python <code>3.12</code>, Django <code>5.2.11</code>, DRF <code>3.16.1</code></li>
+    <li>SimpleJWT (access/refresh + blacklist)</li>
+    <li>Celery + Redis + Flower</li>
+    <li>PostgreSQL + django-redis cache</li>
+    <li>S3 via <code>django-storages</code> + boto3</li>
+    <li>Encrypted fields for token storage</li>
+    <li>Prometheus and optional Sentry integration</li>
+    <li>Google APIs, Meta Graph, LinkedIn APIs</li>
+    <li>Groq/OpenAI SDKs for AI module</li>
+  </ul>
 
-  <h2>7. Social OAuth Flows</h2>
+  <h2>6) Frontend Stack and Libraries</h2>
+  <ul>
+    <li>React 19 + Vite 7</li>
+    <li>React Router for route protection/navigation</li>
+    <li>Axios for API and interceptors</li>
+    <li>Tailwind CSS for UI</li>
+    <li>Recharts for analytics graphs</li>
+    <li>React Hook Form + Zod for form validation</li>
+    <li>Sonner for toast notifications</li>
+  </ul>
+
+  <h2>7) Data Model and Multi-Tenancy</h2>
+  <h3>Base model patterns</h3>
+  <ul>
+    <li><code>BaseModel</code>: UUID + created_at + updated_at</li>
+    <li><code>SoftDeleteModel</code>: is_deleted + deleted_at + deleted_by with restore/hard delete helpers</li>
+  </ul>
+
+  <h3>Main entities</h3>
+  <table>
+    <thead><tr><th>Area</th><th>Models</th><th>Key implementation detail</th></tr></thead>
+    <tbody>
+      <tr><td>Auth</td><td><code>User</code>, <code>OTPToken</code></td><td>User inactive until email OTP verification</td></tr>
+      <tr><td>Org</td><td><code>Organization</code>, <code>OrganizationMember</code>, <code>OrganizationInvite</code></td><td>Active membership uniqueness controls</td></tr>
+      <tr><td>Social</td><td><code>SocialAccount</code>, <code>PublishingTarget</code>, <code>MetaPage</code>, <code>LinkedInOrganization</code></td><td>Encrypted token fields + provider-specific child models</td></tr>
+      <tr><td>Posts</td><td><code>Post</code>, <code>PostPlatform</code>, <code>PostPlatformMedia</code></td><td>One post can fan out to many platforms/targets</td></tr>
+      <tr><td>Analytics</td><td><code>PostPlatformAnalytics</code>, <code>PostPlatformAnalyticsSnapshot</code></td><td>Latest row + time-series snapshots</td></tr>
+      <tr><td>News</td><td><code>NewsSource</code>, <code>NewsArticle</code></td><td>Industry-linked source ingestion</td></tr>
+      <tr><td>Audit</td><td><code>AuditLog</code></td><td>Immutable event table</td></tr>
+    </tbody>
+  </table>
+
+  <h2>8) Authentication, Session, and Security</h2>
+  <h3>JWT/session model</h3>
+  <ul>
+    <li>Access token in auth header (frontend storage).</li>
+    <li>Refresh token in HttpOnly cookie (backend-managed).</li>
+    <li>Refresh rotation + blacklist enabled.</li>
+    <li>Remember-me extends refresh lifetime.</li>
+  </ul>
+
+  <h3>OTP security model</h3>
+  <ul>
+    <li>OTP generated random 6-digit code.</li>
+    <li>Stored as HMAC digest (secret-bound, non-reversible).</li>
+    <li>Cooldown and throttles prevent spam.</li>
+    <li>Attempt caps with lock behavior.</li>
+  </ul>
+
+  <h3>Frontend auth resilience (implemented)</h3>
+  <ul>
+    <li>Public-route bootstrap guard avoids stale protected calls on login page.</li>
+    <li><code>refreshInFlightPromise</code> dedupes parallel refresh requests.</li>
+    <li>Only refresh 401 forces logout; transient errors do not instantly wipe auth.</li>
+    <li>Cross-tab logout sync via storage events.</li>
+  </ul>
+
+  <h3>CORS/CSRF/cookie controls</h3>
+  <ul>
+    <li>Credentials enabled for cross-origin cookie refresh flow.</li>
+    <li>Environment-driven cookie domain, secure flag, SameSite mode.</li>
+    <li>Trusted origins and allowed origins configurable via env.</li>
+  </ul>
+
+  <h2>9) Organization, Roles, and Authorization</h2>
+  <h3>Role matrix</h3>
+  <ul>
+    <li><code>OWNER</code>, <code>ADMIN</code>, <code>EDITOR</code>, <code>VIEWER</code></li>
+  </ul>
+  <h3>Context attachment</h3>
+  <p><code>OrganizationContextMixin</code> resolves current active membership and sets <code>request.organization</code> and <code>request.membership</code>.</p>
+  <h3>Protection</h3>
+  <ul>
+    <li><code>HasOrganization</code></li>
+    <li><code>IsOwner</code>, <code>IsAdminOrOwner</code>, etc.</li>
+    <li><code>IsPlatformAdmin</code> for admin panel (<code>is_staff</code> or <code>is_superuser</code>).</li>
+  </ul>
+
+  <h2>10) Social Account Integration Flows</h2>
   <h3>Meta/Instagram</h3>
   <ul>
-    <li>State signed with HMAC to prevent tampering</li>
-    <li>Short-lived token exchanged for long-lived token</li>
-    <li>Page sync creates Meta and Instagram publishing targets</li>
+    <li>HMAC-signed OAuth state with timestamp validation.</li>
+    <li>Code exchange -> long-lived token storage.</li>
+    <li>Page sync creates Meta targets and Instagram targets.</li>
+    <li>Immediate sync + async sync task for consistency.</li>
   </ul>
 
   <h3>LinkedIn</h3>
   <ul>
-    <li>State stored in cache with TTL</li>
-    <li>Profile fetched from userinfo or decoded from id_token fallback</li>
-    <li>On token revoke/invalid: account and targets deactivated to force reconnect</li>
+    <li>Cache-backed state validation.</li>
+    <li>Profile retrieval with timeout fallback to id_token decode.</li>
+    <li>Publish-side token failures mark account inactive and deactivate targets.</li>
   </ul>
 
   <h3>YouTube</h3>
   <ul>
-    <li>OAuth includes offline refresh token access</li>
-    <li>Account/channel persisted and publishing target created</li>
-    <li>Token refresh can happen both scheduled and during publish</li>
+    <li>Offline OAuth scopes include upload and analytics read.</li>
+    <li>Channel fetched on callback and target created.</li>
+    <li>Refresh token used periodically and on-demand.</li>
   </ul>
 
-  <h2>8. Analytics Pipeline</h2>
+  <h2>11) Scheduling and Publishing Internals</h2>
+  <h3>How scheduler maps to the correct account</h3>
+  <p>Scheduling request uses <code>publishing_target_ids[]</code>. Each ID belongs to one social account, so provider/account is deterministic:</p>
+  <p><code>PostPlatform -> PublishingTarget -> SocialAccount -> credentials</code></p>
+
+  <h3>Validation controls</h3>
+  <ul>
+    <li>Target must belong to request org and be active.</li>
+    <li>Scheduled time must be in future.</li>
+    <li>Provider rules (e.g., Instagram media required, YouTube requires video).</li>
+  </ul>
+
+  <h3>Dispatch engine</h3>
+  <ul>
+    <li>Beat runs every minute.</li>
+    <li>Picks pending jobs and stale processing jobs.</li>
+    <li>Worker applies idempotency lock and provider publisher adapter.</li>
+    <li>Retry/backoff up to 3, then fail with reason.</li>
+  </ul>
+
+  <h3>Provider publishers</h3>
+  <ul>
+    <li>InstagramPublisher: Graph media creation + publish sequence</li>
+    <li>LinkedInPublisher: asset upload + UGC post publish</li>
+    <li>YouTubePublisher: video insert API publish</li>
+  </ul>
+
+  <h2>12) Analytics Data Pipeline</h2>
+  <h3>Sync flow</h3>
   <ol>
-    <li>Periodic task scans successfully published post-platform rows.</li>
-    <li>Fetcher chosen from provider registry.</li>
-    <li>Latest metrics upserted in current table.</li>
-    <li>Snapshot written with de-duplication window to reduce noise.</li>
-    <li>Read APIs aggregate and cache responses for dashboard/graphs.</li>
+    <li>Find successful post-platform rows.</li>
+    <li>Select provider fetcher from registry.</li>
+    <li>Fetch metrics from provider APIs.</li>
+    <li>Update current analytics table.</li>
+    <li>Create snapshot if changed or interval allows.</li>
   </ol>
 
-  <h2>9. Platform Admin Module</h2>
-  <h3>Existing admin coverage</h3>
+  <h3>Why current + snapshots both exist</h3>
   <ul>
-    <li>Users, Organizations, Posts, Social Accounts, Audit Logs</li>
+    <li>Current table serves latest values quickly.</li>
+    <li>Snapshots power charts/trends and fallbacks.</li>
   </ul>
 
-  <h3>Newly implemented in this update</h3>
+  <h3>Endpoint behavior</h3>
   <ul>
-    <li><strong>Industry CRUD</strong> in platform admin API and UI</li>
-    <li><strong>News Source CRUD</strong> in platform admin API and UI</li>
+    <li>Overview/distribution/charts/recent-posts cached per org.</li>
+    <li>Full dashboard endpoint has fallback logic to avoid empty UI when current table sparse.</li>
   </ul>
 
-  <h3>New API endpoints</h3>
+  <h2>13) News Ingestion Pipeline</h2>
   <ul>
-    <li><code>GET/POST /api/v1/admin-panel/industries/</code></li>
-    <li><code>PATCH/DELETE /api/v1/admin-panel/industries/&lt;industry_id&gt;/</code></li>
-    <li><code>GET/POST /api/v1/admin-panel/news-sources/</code></li>
-    <li><code>PATCH/DELETE /api/v1/admin-panel/news-sources/&lt;source_id&gt;/</code></li>
+    <li>Beat task dispatches ingestion every 30 minutes.</li>
+    <li>Runs per industry source set.</li>
+    <li>Persists articles and returns org-industry filtered feed.</li>
   </ul>
 
-  <h2>10. Why “Unauthorized / Session Checking / Slow” Happens</h2>
-  <h3>Unauthorized & refresh loops</h3>
+  <h2>14) AI Generation Pipeline</h2>
   <ul>
-    <li>Refresh cookie domain/samesite mismatch</li>
-    <li>Stale frontend JS bundle after deployment</li>
-    <li>Expired/blacklisted refresh token</li>
-    <li>Inactive user account now blocked by refresh/login checks</li>
+    <li>Endpoint <code>/api/v1/ai/generate-post/</code></li>
+    <li>Serializer validates platform/tone/audience/history input.</li>
+    <li>PostService builds prompt; AIService calls Groq model.</li>
+    <li>Supports JSON parsing helper and retry.</li>
   </ul>
 
-  <h3>Long “checking session” and endpoint slowness</h3>
+  <h2>15) Platform Admin Module (Current Complete Scope)</h2>
+  <h3>Tabs implemented in frontend admin panel</h3>
   <ul>
-    <li>Cold cache, slow DB query, or provider API latency</li>
-    <li>Worker queue backlog</li>
-    <li>Multiple heavy calls triggered on initial page mount</li>
-    <li>Infrastructure resource limits</li>
+    <li>Overview</li>
+    <li>Users</li>
+    <li>Organizations</li>
+    <li>Posts</li>
+    <li>Social Accounts</li>
+    <li>Industries (new)</li>
+    <li>News Sources (new)</li>
+    <li>Audit Logs</li>
   </ul>
 
-  <h2>11. Environment Variables</h2>
-  <p>Major categories used in this project:</p>
+  <h3>Admin CRUD coverage</h3>
+  <table>
+    <thead><tr><th>Resource</th><th>Create</th><th>Read</th><th>Update</th><th>Delete/Archive</th></tr></thead>
+    <tbody>
+      <tr><td>Users</td><td>Yes</td><td>List</td><td>Yes</td><td>Deactivate</td></tr>
+      <tr><td>Organizations</td><td>Yes</td><td>List</td><td>Yes</td><td>Archive + Restore</td></tr>
+      <tr><td>Posts</td><td>-</td><td>List</td><td>Status toggle</td><td>Delete + Restore</td></tr>
+      <tr><td>Social Accounts</td><td>-</td><td>List</td><td>Rename/active</td><td>Disconnect</td></tr>
+      <tr><td>Industries</td><td>Yes</td><td>List</td><td>Yes</td><td>Delete (protected-aware)</td></tr>
+      <tr><td>News Sources</td><td>Yes</td><td>List</td><td>Yes</td><td>Delete</td></tr>
+      <tr><td>Audit Logs</td><td>-</td><td>List/search</td><td>-</td><td>-</td></tr>
+    </tbody>
+  </table>
+
+  <h2>16) Frontend Architecture and Route Map</h2>
+  <h3>Public pages</h3>
+  <p><code>/</code>, <code>/login</code>, <code>/register</code>, <code>/verify-otp</code>, <code>/forgot-password</code>, <code>/reset-password</code>, <code>/terms</code>, <code>/privacy</code></p>
+
+  <h3>Protected app pages</h3>
+  <p><code>/overview</code>, <code>/accounts</code>, <code>/posts</code>, <code>/schedule</code>, <code>/analytics</code>, <code>/audit</code>, <code>/recycle-bin</code>, <code>/feeds</code>, <code>/settings</code>, <code>/admin-panel</code></p>
+
+  <h3>Frontend page inventory</h3>
   <ul>
-    <li>Core: <code>SECRET_KEY</code>, <code>DEBUG</code>, hosts/origins</li>
-    <li>Auth/cookies: refresh cookie name/domain/path/samesite/secure</li>
+    <li>Auth: Login, Register, VerifyOtp, ForgotPassword, ResetPassword</li>
+    <li>Core app: Overview, ConnectedAccounts, PostManagement, Schedule, Analytics, News, Settings, AuditLogs, RecycleBin</li>
+    <li>System/legal: Landing, TermsAndConditions, PrivacyPolicy</li>
+    <li>Admin: AdminPanel</li>
+  </ul>
+
+  <h2>17) Frontend Service Layer and State Flow</h2>
+  <h3>API client and auth handling</h3>
+  <ul>
+    <li><code>services/api.js</code> central Axios instance and interceptors</li>
+    <li>Bearer token injection for protected endpoints</li>
+    <li>401 interceptor with refresh queue and replay</li>
+    <li>Cross-tab auth event syncing</li>
+  </ul>
+
+  <h3>Service modules</h3>
+  <ul>
+    <li><code>authService.js</code></li>
+    <li><code>accountService.js</code></li>
+    <li><code>postService.js</code></li>
+    <li><code>analyticsService.js</code></li>
+    <li><code>newsService.js</code></li>
+    <li><code>adminService.js</code></li>
+    <li><code>auditService.js</code></li>
+    <li><code>settingsService.js</code></li>
+    <li>Utility helpers: <code>csvExport.js</code>, <code>errorUtils.js</code>, AI helpers</li>
+  </ul>
+
+  <h2>18) API Endpoint Map</h2>
+  <h3>System</h3>
+  <ul><li><code>/health/</code>, <code>/ready/</code>, <code>/swagger/</code>, <code>/redoc/</code></li></ul>
+
+  <h3>Auth (<code>/api/v1/auth/</code>)</h3>
+  <ul>
+    <li><code>register/</code>, <code>login/</code>, <code>me/</code>, <code>token/refresh/</code>, <code>logout/</code></li>
+    <li><code>request-email-verification-otp/</code>, <code>verify-email-otp/</code></li>
+    <li><code>request-password-reset/</code>, <code>reset-password/</code></li>
+  </ul>
+
+  <h3>Organizations (<code>/api/v1/organizations/</code>)</h3>
+  <ul>
+    <li><code>create/</code>, <code>delete/</code>, <code>settings/</code></li>
+    <li><code>members/</code>, remove/change-role/transfer-ownership</li>
+  </ul>
+
+  <h3>Social (<code>/api/v1/social/</code>)</h3>
+  <ul>
+    <li>connect/callback endpoints for Meta, LinkedIn, YouTube</li>
+    <li><code>publishing-targets/</code></li>
+    <li>account refresh/disconnect endpoints</li>
+  </ul>
+
+  <h3>Posts (<code>/api/v1/posts/</code>)</h3>
+  <ul>
+    <li>list/create/detail/edit/delete/restore/permanent-delete</li>
+    <li>recycle bin list + empty</li>
+  </ul>
+
+  <h3>Analytics (<code>/api/v1/analytics/</code>)</h3>
+  <ul>
+    <li><code>dashboard/full/</code></li>
+    <li><code>overview/</code>, <code>engagement-chart/</code>, <code>engagement-distribution/</code>, <code>recent-posts/</code></li>
+    <li>Instagram/LinkedIn/YouTube sub-endpoints</li>
+  </ul>
+
+  <h3>News, Audit, AI</h3>
+  <ul>
+    <li><code>/api/v1/news/industry/</code></li>
+    <li><code>/api/v1/audit/logs/</code></li>
+    <li><code>/api/v1/ai/generate-post/</code></li>
+  </ul>
+
+  <h3>Platform Admin (<code>/api/v1/admin-panel/</code>)</h3>
+  <ul>
+    <li>overview/users/organizations/posts/social-accounts/audit-logs</li>
+    <li>new: industries + news-sources CRUD</li>
+  </ul>
+
+  <h2>19) Async Jobs and Celery Beat Schedule</h2>
+  <table>
+    <thead><tr><th>Task</th><th>Schedule</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>dispatch_expiring_meta_refresh_tasks</code></td><td>Every 12h</td><td>Refresh near-expiry Meta accounts</td></tr>
+      <tr><td><code>dispatch_expiring_youtube_refresh_tasks</code></td><td>Every 15m</td><td>Refresh near-expiry YouTube accounts</td></tr>
+      <tr><td><code>dispatch_scheduled_platforms</code></td><td>Every 1m</td><td>Dispatch due publishing jobs</td></tr>
+      <tr><td><code>purge_recycle_bin</code></td><td>Hourly</td><td>Remove soft-deleted posts older than retention</td></tr>
+      <tr><td><code>sync_post_analytics</code></td><td>Every 30m</td><td>Update analytics from providers</td></tr>
+      <tr><td><code>ingest_all_news</code></td><td>Every 30m</td><td>Industry news ingestion fan-out</td></tr>
+      <tr><td><code>cleanup_old_analytics_snapshots</code></td><td>Daily 02:30</td><td>Remove old analytics snapshots</td></tr>
+    </tbody>
+  </table>
+
+  <h2>20) Caching and Performance Strategy</h2>
+  <ul>
+    <li>Redis cache for analytics overview/distribution/charts/dashboard and news endpoints.</li>
+    <li>Frontend short-lived caches for selected service calls (for smoother UX).</li>
+    <li>DB indexes on high-frequency filter fields (provider/status/scheduled timestamps).</li>
+    <li>Async processing to keep API request path responsive.</li>
+  </ul>
+
+  <h2>21) Observability and Health Checks</h2>
+  <ul>
+    <li><code>/health/</code> basic app liveliness</li>
+    <li><code>/ready/</code> DB + Redis readiness probe</li>
+    <li>Request timing middleware emits <code>Server-Timing</code> and <code>X-Response-Time-ms</code></li>
+    <li>Slow requests (>=1000ms) logged with method/path/status/duration</li>
+    <li>Prometheus middleware integrated</li>
+    <li>Sentry integration optional via env</li>
+  </ul>
+
+  <h2>22) Deployment Topology and Environment Variables</h2>
+  <h3>Deployment shape (current)</h3>
+  <ul>
+    <li>Nginx terminates TLS and proxies to Django web container</li>
+    <li>Postgres and Redis as backing services</li>
+    <li>Celery worker and beat in separate containers</li>
+    <li>S3 used for media storage</li>
+  </ul>
+
+  <h3>Important env variable groups</h3>
+  <ul>
+    <li>App/security: <code>SECRET_KEY</code>, <code>DEBUG</code>, cookie/CORS/CSRF settings</li>
     <li>Database: <code>DB_*</code></li>
-    <li>Redis/Celery: <code>REDIS_URL</code>, <code>CELERY_*</code></li>
-    <li>S3: AWS credentials and bucket settings</li>
-    <li>OAuth: Meta/LinkedIn/Google client credentials</li>
-    <li>AI: <code>GROQ_API_KEY</code>, <code>OPENAI_API_KEY</code></li>
-    <li>Observability: <code>SENTRY_DSN</code></li>
+    <li>Redis/Celery: <code>REDIS_URL</code>, <code>REDIS_CACHE_URL</code>, <code>CELERY_*</code></li>
+    <li>Provider OAuth: Meta/LinkedIn/Google credentials and redirect URIs</li>
+    <li>AWS storage: access key, secret key, bucket, region</li>
+    <li>Email credentials and AI API keys</li>
     <li>Frontend: <code>VITE_API_BASE</code></li>
   </ul>
 
-  <h2>12. Operational Guidance</h2>
+  <h2>23) Common Production Issues and Root Causes</h2>
+  <h3>Unauthorized and forced logout loops</h3>
   <ul>
-    <li>Keep secrets out of Git and rotate if accidentally exposed.</li>
-    <li>Hard refresh frontend after deployment to avoid stale auth logic.</li>
-    <li>Use health endpoints <code>/health/</code> and <code>/ready/</code> for checks.</li>
-    <li>Use Flower + request timing logs to diagnose queue and latency issues.</li>
+    <li>Refresh cookie not included due domain/path/samesite/secure mismatch</li>
+    <li>Old frontend JS bundle after deploy</li>
+    <li>Refresh token expired/blacklisted</li>
+    <li>User inactive (login/refresh now blocked by backend checks)</li>
+  </ul>
+
+  <h3>Long session-checking and slow pages</h3>
+  <ul>
+    <li>Backend latency (DB/network/provider calls)</li>
+    <li>Worker queue saturation</li>
+    <li>Multiple heavy endpoints called simultaneously</li>
+    <li>Cold cache on first requests</li>
+  </ul>
+
+  <h2>24) Developer Runbooks</h2>
+  <h3>Runbook A - Connect and schedule</h3>
+  <ol>
+    <li>Connect account in <code>/accounts</code>.</li>
+    <li>Verify targets available via <code>/social/publishing-targets/</code>.</li>
+    <li>Create schedule from <code>/schedule</code>.</li>
+    <li>Confirm status transitions pending -> processing -> success/failed.</li>
+    <li>Check worker logs when failed.</li>
+  </ol>
+
+  <h3>Runbook B - Fix auth refresh issue</h3>
+  <ol>
+    <li>Check refresh cookie presence on API domain.</li>
+    <li>Verify backend cookie settings and CORS origins.</li>
+    <li>Hard refresh frontend and verify latest bundle hash.</li>
+    <li>Test <code>/auth/token/refresh/</code> and inspect status/payload.</li>
+  </ol>
+
+  <h3>Runbook C - Analyze slow endpoint</h3>
+  <ol>
+    <li>Inspect slow request logs from middleware.</li>
+    <li>Check container CPU/memory and worker queue depth.</li>
+    <li>Check DB query plan and indexes for endpoint filters.</li>
+    <li>Validate cache hit/miss behavior for repeated requests.</li>
+  </ol>
+
+  <h2>25) Known Gaps and Future Improvements</h2>
+  <ul>
+    <li>Complete mobile consistency pass across all pages still ongoing.</li>
+    <li>LinkedIn analytics availability constrained by provider app approval/scope.</li>
+    <li>Expand CI, automated tests, and deployment runbooks.</li>
+    <li>Add architecture diagrams (C4/component/deployment).</li>
+    <li>Add <code>.env.example</code> with secure defaults and comments.</li>
   </ul>
 
   <hr />
-  <p class="muted">
-    Generated from code under <code>mfp_backend/</code>, <code>mfp_frontend/</code>, and <code>docker-compose.yml</code>.
-    Keep this file updated whenever auth/session, scheduling, analytics, or admin flows change.
-  </p>
+  <p class="muted small">Source references: <code>mfp_backend/config/settings.py</code>, <code>config/urls.py</code>, <code>config/celery.py</code>, module files under <code>apps/*</code>, frontend under <code>mfp_frontend/src/*</code>, and <code>docker-compose.yml</code>.</p>
 </body>
 </html>
