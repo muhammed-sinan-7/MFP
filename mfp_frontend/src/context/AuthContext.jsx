@@ -114,8 +114,10 @@ export const AuthProvider = ({ children }) => {
       const hasAccessToken = Boolean(getAccessToken());
       const hasStoredSession = Boolean(storedUser?.isAuthenticated);
 
-      // Keep anonymous public pages fast; only reconcile when there is session state.
-      if (isPublicPath && !hasStoredSession && !hasAccessToken) {
+      // On public routes, never trust stale stored user without an access token.
+      // This prevents protected dashboard mounts (and 401 spam) on /login.
+      if (isPublicPath && !hasAccessToken) {
+        setUser(null);
         setLoading(false);
         return;
       }
