@@ -7,9 +7,9 @@ from googleapiclient.http import MediaFileUpload
 
 from .base import BasePublisher
 
-import tempfile
-import requests
+import mimetypes
 import os
+import tempfile
 
 
 class YouTubePublisher(BasePublisher):
@@ -47,21 +47,24 @@ class YouTubePublisher(BasePublisher):
 
         caption = post_platform.caption or "Untitled Video"
 
-        # ✅ FIX: download S3 file to temp file
-        file_url = media.file.url
-
-        response = requests.get(file_url, stream=True)
-        response.raise_for_status()
-
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp_file:
-            for chunk in response.iter_content(chunk_size=8192):
-                if chunk:
-                    tmp_file.write(chunk)
-            tmp_file_path = tmp_file.name
+        # Download from storage to a local temp file (works for S3 + local FS)
+        tmp_file_path = None
+        media.file.open("rb")
+        try:
+            suffix = os.path.splitext(media.file.name or "")[1] or ".mp4"
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
+                for chunk in media.file.chunks():
+                    if chunk:
+                        tmp_file.write(chunk)
+                tmp_file_path = tmp_file.name
+        finally:
+            media.file.close()
 
         try:
+            mime_type = mimetypes.guess_type(media.file.name or "")[0] or "video/mp4"
             media_upload = MediaFileUpload(
                 tmp_file_path,
+                mimetype=mime_type,
                 chunksize=-1,
                 resumable=True
             )
@@ -82,7 +85,7 @@ class YouTubePublisher(BasePublisher):
 
         finally:
             
-            if os.path.exists(tmp_file_path):
+            if tmp_file_path and os.path.exists(tmp_file_path):
                 os.remove(tmp_file_path)
 
         return {"external_id": response.get("id")}
