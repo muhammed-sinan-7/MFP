@@ -35,5 +35,5 @@ urlpatterns = [
     path("industries/", AdminIndustryListCreateView.as_view()),
     path("industries/<uuid:industry_id>/", AdminIndustryDetailView.as_view()),
     path("news-sources/", AdminNewsSourceListCreateView.as_view()),
-    path("news-sources/<uuid:source_id>/", AdminNewsSourceDetailView.as_view()),
+    path("news-sources/<int:source_id>/", AdminNewsSourceDetailView.as_view()),
 ]

@@ -13,8 +13,25 @@ const PUBLIC_ENDPOINTS = [
   "/industries/",
 ];
 
-const isPublicEndpoint = (url = "") =>
-  PUBLIC_ENDPOINTS.some((publicUrl) => url?.includes(publicUrl));
+const normalizeRequestPath = (url = "") => {
+  if (!url) return "";
+
+  try {
+    const base =
+      API_BASE ||
+      (typeof window !== "undefined" ? window.location.origin : "http://localhost");
+    return new URL(url, base).pathname;
+  } catch {
+    return String(url).split("?")[0];
+  }
+};
+
+const isPublicEndpoint = (url = "") => {
+  const path = normalizeRequestPath(url);
+  return PUBLIC_ENDPOINTS.some(
+    (publicUrl) => path === publicUrl || path.endsWith(publicUrl),
+  );
+};
 
 const API = axios.create({
   baseURL: API_BASE,
