@@ -127,6 +127,18 @@ export const AuthProvider = ({ children }) => {
       }
 
       if (hasAccessToken) {
+        if (hasStoredSession) {
+          setLoading(false);
+          syncCurrentUser().catch((error) => {
+            if (error?.response?.status === 401) {
+              clearAuthStorage();
+              setUser(null);
+              persistUser(null);
+            }
+          });
+          return;
+        }
+
         try {
           await syncCurrentUser();
           setLoading(false);
@@ -137,9 +149,6 @@ export const AuthProvider = ({ children }) => {
             clearAuthStorage();
             setUser(null);
             persistUser(null);
-          } else if (hasStoredSession) {
-            setLoading(false);
-            return;
           }
         }
       }
