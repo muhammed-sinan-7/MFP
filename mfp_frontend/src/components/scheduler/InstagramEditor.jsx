@@ -169,8 +169,8 @@ export default function InstagramEditor({
                   <p className="text-sm font-bold text-gray-900">
                     Upload high-res image
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    1080x1080 recommended
+              <p className="text-xs text-gray-400 mt-1">
+                    1080x1080 recommended. Up to 10 images supported.
                   </p>
                 </div>
                 <input
@@ -182,6 +182,18 @@ export default function InstagramEditor({
               </label>
             )}
           </div>
+          {previewUrls.length > 1 ? (
+            <div className="max-w-md mx-auto mb-5 grid grid-cols-5 gap-2">
+              {previewUrls.slice(0, 5).map((url, index) => (
+                <img
+                  key={url}
+                  src={url}
+                  className="aspect-square w-full rounded-xl object-cover border border-gray-200"
+                  alt={`Instagram preview ${index + 1}`}
+                />
+              ))}
+            </div>
+          ) : null}
 
           {/* Caption & Metadata */}
           <div className="space-y-6">

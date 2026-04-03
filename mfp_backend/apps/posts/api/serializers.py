@@ -31,6 +31,30 @@ def validate_instagram_image(file):
     file.seek(0)
 
 
+def validate_platform_media(provider, files):
+    image_files = [file for _, file, media_type in files if media_type == MediaType.IMAGE]
+    video_files = [file for _, file, media_type in files if media_type == MediaType.VIDEO]
+
+    if provider == "instagram":
+        if len(files) > 10:
+            raise ValidationError("Instagram allows max 10 media items.")
+
+        for file in image_files:
+            validate_instagram_image(file)
+
+    if provider == "linkedin":
+        if len(video_files) > 1:
+            raise ValidationError("LinkedIn supports only one video per post.")
+
+        if video_files and image_files:
+            raise ValidationError(
+                "LinkedIn does not support mixing images and videos in the same post."
+            )
+
+        if len(image_files) > 20:
+            raise ValidationError("LinkedIn multi-image posts support up to 20 images.")
+
+
 class PostCreateSerializer(serializers.Serializer):
 
     caption = serializers.CharField(required=False, allow_blank=True)
@@ -73,6 +97,18 @@ class PostCreateSerializer(serializers.Serializer):
         targets = PublishingTarget.objects.filter(id__in=target_ids)
 
         for target in targets:
+            target_id_str = str(target.id)
+            platform_files = []
+
+            for key, file in request.FILES.items():
+                if key.startswith(f"image_{target_id_str}"):
+                    if target.provider == "youtube":
+                        raise ValidationError("YouTube only supports video uploads.")
+                    platform_files.append((key, file, MediaType.IMAGE))
+                elif key.startswith(f"video_{target_id_str}"):
+                    platform_files.append((key, file, MediaType.VIDEO))
+
+            validate_platform_media(target.provider, platform_files)
 
             platform = PostPlatform.objects.create(
                 post=post,
@@ -81,44 +117,13 @@ class PostCreateSerializer(serializers.Serializer):
                 scheduled_time=scheduled_time,
             )
 
-            target_id_str = str(target.id)
-            order = 0
-
-            for key, file in request.FILES.items():
-
-                # Instagram max media
-                if target.provider == "instagram" and order >= 10:
-                    raise ValidationError("Instagram allows max 10 media items.")
-
-                # IMAGE
-                if key.startswith(f"image_{target_id_str}"):
-
-                    if target.provider == "youtube":
-                        raise ValidationError("YouTube only supports video uploads.")
-
-                    if target.provider == "instagram":
-                        validate_instagram_image(file)
-
-                    PostPlatformMedia.objects.create(
-                        post_platform=platform,
-                        file=file,
-                        media_type=MediaType.IMAGE,
-                        order=order,
-                    )
-
-                    order += 1
-
-                # VIDEO
-                elif key.startswith(f"video_{target_id_str}"):
-
-                    PostPlatformMedia.objects.create(
-                        post_platform=platform,
-                        file=file,
-                        media_type=MediaType.VIDEO,
-                        order=order,
-                    )
-
-                    order += 1
+            for order, (_, file, media_type) in enumerate(platform_files):
+                PostPlatformMedia.objects.create(
+                    post_platform=platform,
+                    file=file,
+                    media_type=media_type,
+                    order=order,
+                )
 
         return post
 

@@ -154,8 +154,11 @@ export default function SchedulePage() {
       const target = targets.find((t) => t.id === id);
       if (!target) continue;
       const media = platformMedia[id] || {};
-      const hasMedia = media.video || (media.images && media.images.length > 0);
+      const imageCount = media.images?.length || (media.image ? 1 : 0);
+      const hasMedia = media.video || imageCount > 0;
       if (target.provider === "instagram" && !hasMedia) { toast.warning("Instagram requires media."); setSubmitting(false); return; }
+      if (target.provider === "linkedin" && media.video && imageCount > 0) { toast.warning("LinkedIn does not support mixing images and video in one post."); setSubmitting(false); return; }
+      if (target.provider === "linkedin" && imageCount > 20) { toast.warning("LinkedIn supports up to 20 images in one post."); setSubmitting(false); return; }
       if (!content && !hasMedia) { toast.warning("Post must contain text or media."); setSubmitting(false); return; }
       if (target.provider === "youtube" && !media.video) { toast.error("YouTube requires a video."); setSubmitting(false); return; }
     }
@@ -169,7 +172,7 @@ export default function SchedulePage() {
           const media = platformMedia[id];
           if (!media) return;
           if (media.video) formData.append(`video_${id}`, media.video);
-          if (media.image) formData.append(`image_${id}_0`, media.image);
+          if (media.image && !media.images?.length) formData.append(`image_${id}_0`, media.image);
           media.images?.forEach((file, index) => {
             const field = file.type.startsWith("video") ? `video_${id}_${index}` : `image_${id}_${index}`;
             formData.append(field, file);

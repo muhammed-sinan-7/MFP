@@ -21,20 +21,22 @@ export default function LinkedInEditor({
   //   handleSubmit,
   //   closeEditor,
 }) {
-  const media = platformMedia[target.id] || { image: null };
+  const media = platformMedia[target.id] || { images: [] };
 
-  const previewUrl = useMemo(() => {
-    if (!media.image) return null;
-    return URL.createObjectURL(media.image);
-  }, [media.image]);
+  const previewUrls = useMemo(() => {
+    if (!media.images?.length) return [];
+    return media.images.map((file) => URL.createObjectURL(file));
+  }, [media.images]);
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []).filter((file) =>
+      file.type.startsWith("image/"),
+    );
+    if (!files.length) return;
 
     setPlatformMedia((prev) => ({
       ...prev,
-      [target.id]: { image: file },
+      [target.id]: { images: files },
     }));
   };
   const display_name = target.display_name;
@@ -124,6 +126,7 @@ export default function LinkedInEditor({
                 <input
                   type="file"
                   accept="image/*"
+                  multiple
                   className="hidden"
                   onChange={handleFileChange}
                 />
@@ -160,6 +163,7 @@ export default function LinkedInEditor({
             <div className="flex justify-between items-center px-6 py-4 bg-gray-50/50 border-t border-gray-100 text-[10px] font-black uppercase tracking-tighter text-gray-400">
               <div className="flex gap-4">
                 <span>{content.length} / 3000 chars</span>
+                <span>{previewUrls.length} image{previewUrls.length === 1 ? "" : "s"}</span>
               </div>
 
               {/* <span className="text-blue-600">Readability: High</span> */}
@@ -229,10 +233,10 @@ export default function LinkedInEditor({
 
             {/* Media Section */}
             <div className="mt-2">
-              {previewUrl ? (
+              {previewUrls.length > 0 ? (
                 <div className="cursor-pointer">
                   <img
-                    src={previewUrl}
+                    src={previewUrls[0]}
                     className="w-full h-auto"
                     alt="Post visual"
                   />
@@ -241,9 +245,23 @@ export default function LinkedInEditor({
                       SCHEDULEFLOW.IO
                     </p>
                     <p className="text-[14px] font-bold text-gray-900 mt-0.5 leading-snug">
-                      Revolutionizing Content Workflows for Professionals
+                      {previewUrls.length > 1
+                        ? `${previewUrls.length} images ready for a LinkedIn carousel`
+                        : "Revolutionizing Content Workflows for Professionals"}
                     </p>
                   </div>
+                  {previewUrls.length > 1 ? (
+                    <div className="grid grid-cols-4 gap-2 p-3 bg-white border-t border-gray-100">
+                      {previewUrls.slice(0, 4).map((url, index) => (
+                        <img
+                          key={url}
+                          src={url}
+                          className="aspect-square w-full rounded-lg object-cover"
+                          alt={`LinkedIn preview ${index + 1}`}
+                        />
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               ) : (
                 <div className="aspect-video bg-gray-50 border-y border-gray-100 flex flex-col items-center justify-center">

@@ -2,13 +2,17 @@ import requests
 import time
 from django.utils import timezone
 
+from apps.posts.models import MediaType
+
 from .base import BasePublisher
 
 
 class LinkedInPublisher(BasePublisher):
 
     BASE_URL = "https://api.linkedin.com/v2"
+    REST_BASE_URL = "https://api.linkedin.com/rest"
     REQUEST_TIMEOUT = 20
+    LINKEDIN_VERSION = "202602"
 
     def _mark_account_reconnect_required(self, post_platform):
         social_account = post_platform.publishing_target.social_account
@@ -53,6 +57,22 @@ class LinkedInPublisher(BasePublisher):
 
         person_id = social_account.external_id
         author_urn = f"urn:li:person:{person_id}"
+        media_items = list(post_platform.media.all().order_by("order"))
+        image_items = [item for item in media_items if item.media_type == MediaType.IMAGE]
+        video_items = [item for item in media_items if item.media_type == MediaType.VIDEO]
+
+        if len(image_items) > 1:
+            if video_items:
+                raise Exception(
+                    "LinkedIn multi-image posts do not support videos in the same post."
+                )
+            return self._publish_multi_image_post(
+                image_items=image_items,
+                access_token=access_token,
+                author_urn=author_urn,
+                caption=caption,
+                post_platform=post_platform,
+            )
 
         headers = {
             "Authorization": f"Bearer {access_token}",
@@ -60,8 +80,8 @@ class LinkedInPublisher(BasePublisher):
             "Content-Type": "application/json",
         }
 
-        image = post_platform.media.filter(media_type="IMAGE").first()
-        video = post_platform.media.filter(media_type="VIDEO").first()
+        image = image_items[0] if image_items else None
+        video = video_items[0] if video_items else None
 
         if video:
             media_urn = self._upload_video(video.file, access_token, person_id)
@@ -115,6 +135,63 @@ class LinkedInPublisher(BasePublisher):
 
         return {"external_id": response.json().get("id")}
 
+    def _publish_multi_image_post(
+        self,
+        *,
+        image_items,
+        access_token,
+        author_urn,
+        caption,
+        post_platform,
+    ):
+        image_entries = []
+        for image in image_items:
+            image_urn = self._upload_rest_image(
+                image.file,
+                access_token,
+                author_urn,
+                post_platform=post_platform,
+            )
+            image_entries.append(
+                {
+                    "id": image_urn,
+                    "altText": self._build_alt_text(image.file.name),
+                }
+            )
+
+        payload = {
+            "author": author_urn,
+            "commentary": caption,
+            "visibility": "PUBLIC",
+            "distribution": {
+                "feedDistribution": "MAIN_FEED",
+                "targetEntities": [],
+                "thirdPartyDistributionChannels": [],
+            },
+            "lifecycleState": "PUBLISHED",
+            "isReshareDisabledByAuthor": False,
+            "content": {
+                "multiImage": {
+                    "images": image_entries,
+                }
+            },
+        }
+
+        response = requests.post(
+            f"{self.REST_BASE_URL}/posts",
+            json=payload,
+            headers=self._rest_headers(access_token),
+            timeout=self.REQUEST_TIMEOUT,
+        )
+
+        self._raise_for_linkedin_error(
+            response,
+            "LinkedIn multi-image publish failed",
+            post_platform=post_platform,
+        )
+
+        return {"external_id": self._extract_linkedin_id(response)}
+
     def _wait_for_asset_ready(self, asset, access_token):
         """
         LinkedIn's /v2/assets/{urn} status endpoint is unreliable.
@@ -123,6 +200,78 @@ class LinkedInPublisher(BasePublisher):
         """
         print(f"[ASSET READY] Waiting 4s for asset to process: {asset}")
         time.sleep(4)
+
+    def _rest_headers(self, access_token):
+        return {
+            "Authorization": f"Bearer {access_token}",
+            "X-Restli-Protocol-Version": "2.0.0",
+            "Linkedin-Version": self.LINKEDIN_VERSION,
+            "Content-Type": "application/json",
+        }
+
+    def _upload_rest_image(self, file_field, access_token, author_urn, post_platform):
+        initialize_payload = {
+            "initializeUploadRequest": {
+                "owner": author_urn,
+            }
+        }
+
+        initialize_res = requests.post(
+            f"{self.REST_BASE_URL}/images?action=initializeUpload",
+            json=initialize_payload,
+            headers=self._rest_headers(access_token),
+            timeout=self.REQUEST_TIMEOUT,
+        )
+
+        self._raise_for_linkedin_error(
+            initialize_res,
+            "LinkedIn image initialize failed",
+            post_platform=post_platform,
+        )
+
+        data = initialize_res.json().get("value", {})
+        upload_url = data.get("uploadUrl")
+        image_urn = data.get("image")
+
+        if not upload_url or not image_urn:
+            raise Exception("LinkedIn image initialize response was missing upload data.")
+
+        file_field.open()
+        file_bytes = file_field.read()
+        file_field.close()
+
+        upload_res = requests.put(
+            upload_url,
+            data=file_bytes,
+            headers={"Content-Type": "application/octet-stream"},
+            timeout=self.REQUEST_TIMEOUT,
+        )
+
+        self._raise_for_linkedin_error(
+            upload_res,
+            "LinkedIn image upload failed",
+            post_platform=post_platform,
+        )
+
+        self._wait_for_asset_ready(image_urn, access_token)
+        return image_urn
+
+    def _build_alt_text(self, file_name):
+        if not file_name:
+            return "LinkedIn post image"
+        return file_name[:120]
+
+    def _extract_linkedin_id(self, response):
+        restli_id = response.headers.get("x-restli-id") or response.headers.get("X-RestLi-Id")
+        if restli_id:
+            return restli_id
+
+        try:
+            payload = response.json()
+        except ValueError:
+            return None
+
+        return payload.get("id")
 
     def _upload_image(self, file_field, access_token, person_id):
 
