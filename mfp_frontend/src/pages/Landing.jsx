@@ -180,6 +180,10 @@ export default function LandingPage() {
         <Link to="/privacy" className="hover:text-blue-600 hover:underline">
           Privacy
         </Link>
+        <span>|</span>
+        <Link to="/support" className="hover:text-blue-600 hover:underline">
+          Support
+        </Link>
       </footer>
     </div>
   );

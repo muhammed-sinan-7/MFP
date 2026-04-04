@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 export default function TermsAndConditions() {
   return (
     <div className="min-h-screen bg-slate-50 py-10 px-4">
@@ -10,7 +12,12 @@ export default function TermsAndConditions() {
           <p>You are responsible for content you schedule or publish through connected social accounts.</p>
           <p>We may suspend access for abuse, policy violations, or security risks.</p>
           <p>Service features may change over time to improve security, stability, and compliance.</p>
-          <p>For legal concerns or account support, contact the platform administrator.</p>
+          <p>
+            For legal concerns or account support, use the{" "}
+            <Link to="/support" className="text-blue-600 hover:underline">
+              support center
+            </Link>.
+          </p>
         </div>
       </div>
     </div>

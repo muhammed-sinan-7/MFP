@@ -28,6 +28,7 @@ import AdminPanel from "./pages/AdminPanel";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import LegalConsentBanner from "./components/legal/LegalConsentBanner";
+import SupportCenter from "./pages/SupportCenter";
 
 function App() {
   return (
@@ -53,6 +54,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/terms" element={<TermsAndConditions />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/support" element={<SupportCenter publicOnly />} />
 
           <Route
             path="/register"
@@ -123,6 +125,7 @@ function App() {
             <Route path="/audit" element={<AuditLogs />} />
             <Route path="/recycle-bin" element={<RecycleBinPage />} />
             <Route path="/settings" element={<Settings/>} />
+            <Route path="/support-center" element={<SupportCenter />} />
             <Route path="/feeds" element={<News />} />
             <Route
               path="/admin-panel"

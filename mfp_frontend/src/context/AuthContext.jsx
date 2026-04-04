@@ -87,6 +87,7 @@ export const AuthProvider = ({ children }) => {
     "/reset-password",
     "/terms",
     "/privacy",
+    "/support",
   ];
 
   const syncCurrentUser = async () => {

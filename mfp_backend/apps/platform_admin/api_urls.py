@@ -15,6 +15,8 @@ from .views import (
     AdminPostRestoreView,
     AdminSocialAccountDetailView,
     AdminSocialAccountListView,
+    AdminSupportTicketDetailView,
+    AdminSupportTicketListView,
     AdminUserDetailView,
     AdminUserListCreateView,
 )
@@ -28,6 +30,8 @@ urlpatterns = [
     path("organizations/<uuid:organization_id>/restore/", AdminOrganizationRestoreView.as_view()),
     path("social-accounts/", AdminSocialAccountListView.as_view()),
     path("social-accounts/<uuid:account_id>/", AdminSocialAccountDetailView.as_view()),
+    path("support-tickets/", AdminSupportTicketListView.as_view()),
+    path("support-tickets/<uuid:ticket_id>/", AdminSupportTicketDetailView.as_view()),
     path("posts/", AdminPostListView.as_view()),
     path("posts/<uuid:post_id>/", AdminPostDetailView.as_view()),
     path("posts/<uuid:post_id>/restore/", AdminPostRestoreView.as_view()),

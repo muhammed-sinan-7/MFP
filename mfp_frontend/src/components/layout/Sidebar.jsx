@@ -11,7 +11,8 @@ import {
   LinkIcon,
   NewspaperIcon,
   ClipboardDocumentListIcon,
-  TrashIcon
+  TrashIcon,
+  ChatBubbleLeftRightIcon,
 } from "@heroicons/react/24/outline";
 
 import { BarChart3 } from "lucide-react";
@@ -33,6 +34,7 @@ function Sidebar({ className = "", onNavigate, onClose, showCloseButton = false 
     // { name: "Team Members", icon: UsersIcon, path: "/team" },
     { name: "Analytics", icon: BarChart3, path: "/analytics" },
     { name: "Feeds", icon: NewspaperIcon, path: "/feeds" },
+    { name: "Support", icon: ChatBubbleLeftRightIcon, path: "/support-center" },
     { name: "Audit Logs", icon: ChartBarIcon, path: "/audit" },
     { name: "Recycle Bin", icon: TrashIcon, path: "/recycle-bin" },
     { name: "Settings", icon: Cog6ToothIcon, path: "/settings" },

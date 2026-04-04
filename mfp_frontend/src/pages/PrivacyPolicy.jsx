@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-slate-50 py-10 px-4">
@@ -10,7 +12,12 @@ export default function PrivacyPolicy() {
           <p>Access tokens are stored securely and used only for authorized API operations.</p>
           <p>Analytics data and app activity logs are retained for operational monitoring and performance reporting.</p>
           <p>Deleted content in recycle bin is automatically purged based on retention settings.</p>
-          <p>You can request account disconnection or data cleanup through support channels.</p>
+          <p>
+            You can request account disconnection or data cleanup through the{" "}
+            <Link to="/support" className="text-blue-600 hover:underline">
+              support center
+            </Link>.
+          </p>
         </div>
       </div>
     </div>

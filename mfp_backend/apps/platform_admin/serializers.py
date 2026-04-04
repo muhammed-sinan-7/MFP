@@ -8,6 +8,7 @@ from apps.news.models import NewsSource
 from apps.organizations.models import Organization, OrganizationMember
 from apps.posts.models import Post, PostPlatform
 from apps.social_accounts.models import SocialAccount
+from apps.support.models import SupportTicket
 
 User = get_user_model()
 
@@ -278,3 +279,35 @@ class AdminNewsSourceWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = NewsSource
         fields = ["name", "rss_url", "industry", "is_active"]
+
+
+class AdminSupportTicketSerializer(serializers.ModelSerializer):
+    organization_name = serializers.CharField(source="organization.name", read_only=True)
+    requester_email = serializers.CharField(source="requester.email", read_only=True)
+
+    class Meta:
+        model = SupportTicket
+        fields = [
+            "id",
+            "name",
+            "email",
+            "requester_email",
+            "organization_name",
+            "subject",
+            "category",
+            "message",
+            "priority",
+            "status",
+            "source",
+            "admin_response",
+            "created_at",
+            "updated_at",
+            "responded_at",
+            "resolved_at",
+        ]
+
+
+class AdminSupportTicketWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SupportTicket
+        fields = ["status", "priority", "admin_response"]

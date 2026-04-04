@@ -35,6 +35,11 @@ export const deleteAdminSocialAccount = (id) =>
 export const listAdminAuditLogs = (params) =>
   API.get("/admin-panel/audit-logs/", { params });
 
+export const listAdminSupportTickets = (params) =>
+  API.get("/admin-panel/support-tickets/", { params });
+export const updateAdminSupportTicket = (id, data) =>
+  API.patch(`/admin-panel/support-tickets/${id}/`, data);
+
 export const listAdminIndustries = (params) =>
   API.get("/admin-panel/industries/", { params });
 export const createAdminIndustry = (data) =>

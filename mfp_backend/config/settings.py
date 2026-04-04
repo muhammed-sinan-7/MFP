@@ -111,6 +111,7 @@ INSTALLED_APPS = [
     "apps.audit",
     "apps.ai",
     "apps.platform_admin",
+    "apps.support",
 ]
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -169,6 +170,7 @@ REST_FRAMEWORK.update(
             "otp_request": "5/min",
             "otp_verify": "10/min",
             "login": "5/min",
+            "support": "10/hour",
         },
     }
 )
@@ -241,6 +243,7 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+SUPPORT_EMAIL = os.getenv("SUPPORT_EMAIL", DEFAULT_FROM_EMAIL)
 
 FIELD_ENCRYPTION_KEY = os.getenv("FIELD_ENCRYPTION_KEY")
 

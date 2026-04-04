@@ -16,6 +16,7 @@ from apps.organizations.models import Organization, OrganizationMember
 from apps.posts.models import Post
 from apps.social_accounts.api.views import disconnect_social_account
 from apps.social_accounts.models import SocialAccount
+from apps.support.models import SupportTicket
 from common.pagination import StandardResultsSetPagination
 
 from .permissions import IsPlatformAdmin
@@ -28,6 +29,8 @@ from .serializers import (
     AdminNewsSourceWriteSerializer,
     AdminPostSerializer,
     AdminSocialAccountSerializer,
+    AdminSupportTicketSerializer,
+    AdminSupportTicketWriteSerializer,
     AdminUserSerializer,
     AdminUserWriteSerializer,
 )
@@ -78,6 +81,15 @@ class AdminOverviewView(APIView):
                 "last_24h": AuditLog.objects.filter(
                     created_at__gte=now - timedelta(days=1)
                 ).count()
+            },
+            "support_tickets": {
+                "total": SupportTicket.objects.count(),
+                "open": SupportTicket.objects.filter(
+                    status__in=["open", "in_progress"]
+                ).count(),
+                "resolved": SupportTicket.objects.filter(
+                    status__in=["resolved", "closed"]
+                ).count(),
             },
             "recent_users": AdminUserSerializer(
                 User.objects.order_by("-created_at")[:5],
@@ -356,6 +368,49 @@ class AdminAuditLogListView(AdminPaginationMixin, APIView):
                 | Q(organization__name__icontains=query)
             )
         return self.paginate(request, queryset, AdminAuditLogSerializer)
+
+
+class AdminSupportTicketListView(AdminPaginationMixin, APIView):
+    permission_classes = [IsAuthenticated, IsPlatformAdmin]
+
+    def get(self, request):
+        query = request.query_params.get("q", "").strip()
+        status_filter = request.query_params.get("status", "").strip()
+        queryset = SupportTicket.objects.select_related(
+            "organization", "requester"
+        ).order_by("-created_at")
+
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+
+        if query:
+            queryset = queryset.filter(
+                Q(subject__icontains=query)
+                | Q(email__icontains=query)
+                | Q(name__icontains=query)
+                | Q(message__icontains=query)
+                | Q(organization__name__icontains=query)
+            )
+
+        return self.paginate(request, queryset, AdminSupportTicketSerializer)
+
+
+class AdminSupportTicketDetailView(APIView):
+    permission_classes = [IsAuthenticated, IsPlatformAdmin]
+
+    def patch(self, request, ticket_id):
+        ticket = SupportTicket.objects.filter(id=ticket_id).first()
+        if not ticket:
+            return Response({"error": "Support ticket not found"}, status=404)
+
+        serializer = AdminSupportTicketWriteSerializer(
+            ticket,
+            data=request.data,
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(AdminSupportTicketSerializer(ticket).data)
 
 
 class AdminIndustryListCreateView(AdminPaginationMixin, APIView):

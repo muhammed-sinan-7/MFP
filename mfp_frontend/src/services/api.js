@@ -11,6 +11,7 @@ const PUBLIC_ENDPOINTS = [
   "/auth/reset-password/",
   "/auth/token/refresh/",
   "/industries/",
+  "/support/public/",
 ];
 
 const normalizeRequestPath = (url = "") => {
@@ -49,7 +50,7 @@ const getAccessTokenPersistenceMode = () => {
 
   try {
     return window.localStorage.getItem(ACCESS_TOKEN_STORAGE_MODE_KEY) || "session";
-  } catch (error) {
+  } catch {
     return "session";
   }
 };
@@ -62,7 +63,7 @@ const getTokenStorage = () => {
   try {
     const mode = getAccessTokenPersistenceMode();
     return mode === "local" ? window.localStorage : window.sessionStorage;
-  } catch (error) {
+  } catch {
     return window.sessionStorage;
   }
 };
@@ -75,7 +76,7 @@ const loadPersistedAccessToken = () => {
   try {
     const storage = getTokenStorage();
     return storage?.getItem(ACCESS_TOKEN_STORAGE_KEY) || null;
-  } catch (error) {
+  } catch {
     return null;
   }
 };
@@ -98,7 +99,8 @@ const broadcastAuthEvent = (type) => {
       AUTH_EVENT_KEY,
       JSON.stringify({ type, ts: Date.now() }),
     );
-  } catch (error) {
+  } catch {
+    return;
   }
 };
 
@@ -145,7 +147,8 @@ export const setAccessToken = (token, options = {}) => {
     window.sessionStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
     window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
     window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_MODE_KEY);
-  } catch (error) {
+  } catch {
+    return;
   }
 };
 
@@ -293,7 +296,8 @@ API.interceptors.response.use(
 export async function logoutUser() {
   try {
     await API.post("/auth/logout/");
-  } catch (err) {
+  } catch {
+    return;
   } finally {
     clearAuthStorage();
     broadcastAuthEvent("logout");

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Shield, Users, Building2, FileText, Link2, ScrollText, RefreshCcw, Tags, Newspaper } from "lucide-react";
+import { Shield, Users, Building2, FileText, Link2, ScrollText, RefreshCcw, Tags, Newspaper, LifeBuoy } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -20,6 +20,7 @@ import {
   listAdminOrganizations,
   listAdminPosts,
   listAdminSocialAccounts,
+  listAdminSupportTickets,
   listAdminUsers,
   restoreAdminOrganization,
   restoreAdminPost,
@@ -28,6 +29,7 @@ import {
   updateAdminOrganization,
   updateAdminPost,
   updateAdminSocialAccount,
+  updateAdminSupportTicket,
   updateAdminUser,
 } from "../services/adminService";
 import { getIndustries } from "../services/settingsService";
@@ -38,6 +40,7 @@ const tabs = [
   { id: "organizations", label: "Organizations", icon: Building2 },
   { id: "posts", label: "Posts", icon: FileText },
   { id: "accounts", label: "Social Accounts", icon: Link2 },
+  { id: "support", label: "Support", icon: LifeBuoy },
   { id: "industries", label: "Industries", icon: Tags },
   { id: "news", label: "News Sources", icon: Newspaper },
   { id: "audit", label: "Audit Logs", icon: ScrollText },
@@ -113,6 +116,7 @@ function AdminPanel() {
   const [industryRows, setIndustryRows] = useState([]);
   const [newsSources, setNewsSources] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
+  const [supportTickets, setSupportTickets] = useState([]);
   const [industries, setIndustries] = useState([]);
   const [userForm, setUserForm] = useState(emptyUserForm);
   const [editingUserId, setEditingUserId] = useState(null);
@@ -156,6 +160,9 @@ function AdminPanel() {
       } else if (tab === "accounts") {
         const res = await listAdminSocialAccounts({ q: query || undefined, page_size: 50 });
         setAccounts(res.data.results || []);
+      } else if (tab === "support") {
+        const res = await listAdminSupportTickets({ q: query || undefined, page_size: 50 });
+        setSupportTickets(res.data.results || []);
       } else if (tab === "industries") {
         const res = await listAdminIndustries({ q: query || undefined, page_size: 50 });
         setIndustryRows(res.data.results || []);
@@ -193,6 +200,7 @@ function AdminPanel() {
       { label: "Organizations", value: overview.organizations?.total || 0, hint: `${overview.organizations?.deleted || 0} archived` },
       { label: "Posts", value: overview.posts?.total || 0, hint: `${overview.posts?.deleted || 0} deleted` },
       { label: "Social Accounts", value: overview.social_accounts?.total || 0, hint: `${overview.social_accounts?.expired || 0} expired` },
+      { label: "Support Tickets", value: overview.support_tickets?.total || 0, hint: `${overview.support_tickets?.open || 0} open` },
     ];
   }, [overview]);
 
@@ -675,6 +683,90 @@ function AdminPanel() {
                         className="text-rose-600"
                       >
                         Disconnect
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </TableShell>
+      ) : null}
+
+      {activeTab === "support" ? (
+        <TableShell>
+          <table className="min-w-full text-sm">
+            <thead className="bg-slate-50 text-left text-slate-500">
+              <tr>
+                <th className="px-6 py-3">Requester</th>
+                <th className="px-6 py-3">Organization</th>
+                <th className="px-6 py-3">Subject</th>
+                <th className="px-6 py-3">Priority</th>
+                <th className="px-6 py-3">Status</th>
+                <th className="px-6 py-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {supportTickets.map((ticket) => (
+                <tr key={ticket.id} className="border-t border-slate-100 align-top">
+                  <td className="px-6 py-3">
+                    <div className="font-medium text-slate-900">{ticket.name}</div>
+                    <div className="text-xs text-slate-500">{ticket.email}</div>
+                  </td>
+                  <td className="px-6 py-3">{ticket.organization_name || "-"}</td>
+                  <td className="px-6 py-3">
+                    <div className="font-medium text-slate-900">{ticket.subject}</div>
+                    <div className="mt-1 max-w-md text-xs leading-relaxed text-slate-500">{ticket.message}</div>
+                    {ticket.admin_response ? (
+                      <div className="mt-2 rounded-xl bg-slate-50 p-2 text-xs text-slate-600">
+                        Reply: {ticket.admin_response}
+                      </div>
+                    ) : null}
+                  </td>
+                  <td className="px-6 py-3 capitalize">{ticket.priority}</td>
+                  <td className="px-6 py-3 capitalize">{String(ticket.status || "").replaceAll("_", " ")}</td>
+                  <td className="px-6 py-3">
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const reply = window.prompt("Reply to this ticket", ticket.admin_response || "");
+                          if (reply === null) return;
+                          await updateAdminSupportTicket(ticket.id, {
+                            admin_response: reply,
+                            status: reply ? "in_progress" : ticket.status,
+                          });
+                          toast.success("Support ticket updated");
+                          await loadTab("support");
+                          await loadOverview();
+                        }}
+                        className="text-blue-600"
+                      >
+                        Reply
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await updateAdminSupportTicket(ticket.id, { status: "resolved" });
+                          toast.success("Ticket marked resolved");
+                          await loadTab("support");
+                          await loadOverview();
+                        }}
+                        className="text-emerald-600"
+                      >
+                        Resolve
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await updateAdminSupportTicket(ticket.id, { status: "closed" });
+                          toast.success("Ticket closed");
+                          await loadTab("support");
+                          await loadOverview();
+                        }}
+                        className="text-rose-600"
+                      >
+                        Close
                       </button>
                     </div>
                   </td>
