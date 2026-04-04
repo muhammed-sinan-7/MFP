@@ -1,12 +1,12 @@
 from django.core.cache import cache
-from django.db.models import F, Sum
+from django.db.models import Count, F, Prefetch, Q, Sum
 from django.utils.timezone import now, timedelta
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.news.selectors import get_industry_news
 from apps.organizations.mixins import OrganizationContextMixin
-from apps.posts.models import PostPlatform, PublishStatus
+from apps.posts.models import PostPlatform, PostPlatformMedia, PublishStatus
 from apps.social_accounts.models import SocialAccount, SocialProvider
 
 from ..models import PostPlatformAnalytics, PostPlatformAnalyticsSnapshot
@@ -18,6 +18,14 @@ FULL_DASHBOARD_CACHE_TTL_SECONDS = 5 * 60
 
 def _cache_key(org_id, scope, extra=""):
     return f"analytics:{scope}:org:{org_id}:{extra}"
+
+
+def _first_prefetched_media(post_platform):
+    prefetched = getattr(post_platform, "prefetched_media", None)
+    if prefetched is not None:
+        return prefetched[0] if prefetched else None
+
+    return post_platform.media.order_by("order").first()
 
 
 class AnalyticsListView(APIView):
@@ -271,14 +279,26 @@ class RecentPostsAPIView(OrganizationContextMixin, APIView):
                 "post_platform__post",
                 "post_platform__publishing_target",
             )
-            .prefetch_related("post_platform__media")
+            .prefetch_related(
+                Prefetch(
+                    "post_platform__media",
+                    queryset=PostPlatformMedia.objects.only(
+                        "id",
+                        "post_platform_id",
+                        "file",
+                        "media_type",
+                        "order",
+                    ).order_by("order"),
+                    to_attr="prefetched_media",
+                )
+            )
             .order_by("-created_at")[:10]
         )
 
         data = []
 
         def resolve_media(post_platform):
-            media = post_platform.media.order_by("order").first()
+            media = _first_prefetched_media(post_platform)
             if not media:
                 return None, None
             file_url = media.file.url if media.file else None
@@ -441,29 +461,59 @@ class FullDashboardAPIView(OrganizationContextMixin, APIView):
 
         posts_qs = PostPlatform.objects.filter(post__organization=org)
         posts_counts = {
-            "scheduled": posts_qs.filter(
-                publish_status=PublishStatus.PENDING, scheduled_time__gte=current_time
-            ).count(),
-            "processing": posts_qs.filter(publish_status=PublishStatus.PROCESSING).count(),
-            "published_30d": posts_qs.filter(
-                publish_status=PublishStatus.SUCCESS, scheduled_time__gte=last_30_days
-            ).count(),
-            "failed_30d": posts_qs.filter(
-                publish_status=PublishStatus.FAILED, scheduled_time__gte=last_30_days
-            ).count(),
+            key: int(value or 0)
+            for key, value in posts_qs.aggregate(
+                scheduled=Count(
+                    "id",
+                    filter=Q(
+                        publish_status=PublishStatus.PENDING,
+                        scheduled_time__gte=current_time,
+                    ),
+                ),
+                processing=Count(
+                    "id",
+                    filter=Q(publish_status=PublishStatus.PROCESSING),
+                ),
+                published_30d=Count(
+                    "id",
+                    filter=Q(
+                        publish_status=PublishStatus.SUCCESS,
+                        scheduled_time__gte=last_30_days,
+                    ),
+                ),
+                failed_30d=Count(
+                    "id",
+                    filter=Q(
+                        publish_status=PublishStatus.FAILED,
+                        scheduled_time__gte=last_30_days,
+                    ),
+                ),
+            ).items()
         }
 
         # ------------------ TOP POSTS ------------------
         top_posts_qs = (
             base_analytics.select_related("post_platform__publishing_target")
-            .prefetch_related("post_platform__media")
+            .prefetch_related(
+                Prefetch(
+                    "post_platform__media",
+                    queryset=PostPlatformMedia.objects.only(
+                        "id",
+                        "post_platform_id",
+                        "file",
+                        "media_type",
+                        "order",
+                    ).order_by("order"),
+                    to_attr="prefetched_media",
+                )
+            )
             .annotate(engagement=F("likes") + F("comments") + F("shares"))
             .order_by("-engagement")[:5]
         )
 
         top_posts = []
         for p in top_posts_qs:
-            media = p.post_platform.media.order_by("order").first()
+            media = _first_prefetched_media(p.post_platform)
             thumbnail = media.file.url if media and media.file else None
             if thumbnail and not str(thumbnail).startswith("http"):
                 thumbnail = request.build_absolute_uri(thumbnail)
@@ -495,12 +545,24 @@ class FullDashboardAPIView(OrganizationContextMixin, APIView):
             snapshot_top = (
                 PostPlatformAnalyticsSnapshot.objects.filter(id__in=latest_ids)
                 .select_related("post_platform__publishing_target")
-                .prefetch_related("post_platform__media")
+                .prefetch_related(
+                    Prefetch(
+                        "post_platform__media",
+                        queryset=PostPlatformMedia.objects.only(
+                            "id",
+                            "post_platform_id",
+                            "file",
+                            "media_type",
+                            "order",
+                        ).order_by("order"),
+                        to_attr="prefetched_media",
+                    )
+                )
                 .annotate(engagement=F("likes") + F("comments") + F("shares"))
                 .order_by("-engagement")[:5]
             )
             for p in snapshot_top:
-                media = p.post_platform.media.order_by("order").first()
+                media = _first_prefetched_media(p.post_platform)
                 thumbnail = media.file.url if media and media.file else None
                 if thumbnail and not str(thumbnail).startswith("http"):
                     thumbnail = request.build_absolute_uri(thumbnail)
@@ -535,12 +597,17 @@ class FullDashboardAPIView(OrganizationContextMixin, APIView):
                 }
             )
 
-        active_accounts = SocialAccount.objects.filter(organization=org, is_active=True)
+        active_providers = set(
+            SocialAccount.objects.filter(organization=org, is_active=True).values_list(
+                "provider",
+                flat=True,
+            )
+        )
         integrations = {
-            "instagram": active_accounts.filter(provider=SocialProvider.INSTAGRAM).exists()
-            or active_accounts.filter(provider=SocialProvider.META).exists(),
-            "linkedin": active_accounts.filter(provider=SocialProvider.LINKEDIN).exists(),
-            "youtube": active_accounts.filter(provider=SocialProvider.YOUTUBE).exists(),
+            "instagram": SocialProvider.INSTAGRAM in active_providers
+            or SocialProvider.META in active_providers,
+            "linkedin": SocialProvider.LINKEDIN in active_providers,
+            "youtube": SocialProvider.YOUTUBE in active_providers,
         }
 
         # ------------------ NEWS ------------------

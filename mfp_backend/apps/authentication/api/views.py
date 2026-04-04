@@ -35,6 +35,18 @@ from apps.organizations.models import OrganizationMember
 User = get_user_model()
 
 
+def get_active_membership(user):
+    if not user:
+        return None
+
+    return (
+        OrganizationMember.objects.select_related("organization")
+        .only("role", "organization__id", "organization__name")
+        .filter(user=user, is_deleted=False)
+        .first()
+    )
+
+
 def get_refresh_cookie_max_age(refresh_token):
     remember_me = bool(refresh_token.get("remember_me"))
     lifetime = (
@@ -223,13 +235,7 @@ class CustomTokenRefreshView(TokenRefreshView):
                     )
                     clear_refresh_cookie(fallback)
                     return fallback
-                org = (
-                    OrganizationMember.objects.select_related("organization")
-                    .filter(user=user, is_deleted=False)
-                    .first()
-                    if user
-                    else None
-                )
+                org = get_active_membership(user)
 
                 if user:
                     response.data.update(
@@ -366,12 +372,7 @@ class LoginView(APIView):
         except Throttled:
             return Response({"error": "Too many requests"}, status=429)
 
-        org = (
-            OrganizationMember.objects.select_related("organization")
-            .only("role", "organization__id", "organization__name")
-            .filter(user=user, is_deleted=False)
-            .first()
-        )
+        org = get_active_membership(user)
         response = Response(
             {
                 "access": str(refresh.access_token),
@@ -392,11 +393,7 @@ class MeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        org = (
-            OrganizationMember.objects.select_related("organization")
-            .filter(user=request.user, is_deleted=False)
-            .first()
-        )
+        org = get_active_membership(request.user)
 
         return Response(
             {

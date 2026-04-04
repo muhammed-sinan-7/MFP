@@ -102,7 +102,7 @@ const Analytics = () => {
         if (mounted) {
           setConnectedPlatforms(Array.from(providers));
         }
-      } catch (error) {
+      } catch {
         if (mounted) {
           setConnectedPlatforms([]);
         }

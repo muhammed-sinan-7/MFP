@@ -3,6 +3,7 @@ import API from "./api";
 
 const listRequestCache = new Map();
 const LIST_CACHE_TTL_MS = 5000;
+const POST_CREATE_TIMEOUT_MS = 5 * 60 * 1000;
 
 const buildCacheKey = (path, params) =>
   JSON.stringify({
@@ -19,7 +20,9 @@ const invalidateListRequestCache = () => {
 };
 
 export const createPost = (data) => {
-  return API.post("/posts/create/", data).then((response) => {
+  return API.post("/posts/create/", data, {
+    timeout: POST_CREATE_TIMEOUT_MS,
+  }).then((response) => {
     invalidateListRequestCache();
     return response;
   });

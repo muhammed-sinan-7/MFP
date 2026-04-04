@@ -191,6 +191,9 @@ export default function SchedulePage() {
     } catch (err) {
       console.error("API ERROR:", err);
       let message = "Failed to process request";
+      if (err?.code === "ECONNABORTED") {
+        message = "Upload is taking longer than expected. Please wait and try again in a moment.";
+      }
       if (err?.response?.data) {
         const data = err.response.data;
         message = data.non_field_errors?.[0] || data.detail || (typeof data === "object" ? data[Object.keys(data)[0]] : message);

@@ -24,7 +24,7 @@ app.conf.beat_schedule = {
     },
     "dispatch-scheduled-platforms-every-minute": {
         "task": "apps.posts.tasks.dispatch_scheduled_platforms",
-        "schedule": crontab(minute="*"),
+        "schedule": 10.0,
     },
     "purge-recycle-bin-every-hour": {
         "task": "apps.posts.tasks.purge_recycle_bin",

@@ -18,20 +18,25 @@ function ConnectedAccounts() {
   const [disconnectTarget, setDisconnectTarget] = useState(null);
   const [disconnectLoading, setDisconnectLoading] = useState(false);
   const [syncingMeta, setSyncingMeta] = useState(false);
+  const [justConnectedProvider, setJustConnectedProvider] = useState(null);
 
-  const fetchAccounts = useCallback(async () => {
-    const cached = getCachedSocialList();
+  const updateSyncState = useCallback((list) => {
+    const hasMeta = list.some((acc) => acc.provider === "meta");
+    const hasInstagramTarget = list.some((acc) =>
+      (acc.publishing_targets || []).some((target) => target.provider === "instagram"),
+    );
+    setSyncingMeta(hasMeta && !hasInstagramTarget);
+  }, []);
+
+  const fetchAccounts = useCallback(async (options = {}) => {
+    const { force = false } = options;
+    const cached = force ? { data: null, fresh: false } : getCachedSocialList();
 
     if (cached.data) {
       const list = cached.data || [];
       setAccounts(list);
       setError(null);
-
-      const hasMeta = list.some((acc) => acc.provider === "meta");
-      const hasInstagramTarget = list.some((acc) =>
-        (acc.publishing_targets || []).some((target) => target.provider === "instagram"),
-      );
-      setSyncingMeta(hasMeta && !hasInstagramTarget);
+      updateSyncState(list);
 
       if (cached.fresh) {
         setLoading(false);
@@ -45,12 +50,7 @@ function ConnectedAccounts() {
       setAccounts(list);
       setError(null);
       cacheSocialList(list);
-
-      const hasMeta = list.some((acc) => acc.provider === "meta");
-      const hasInstagramTarget = list.some((acc) =>
-        (acc.publishing_targets || []).some((target) => target.provider === "instagram"),
-      );
-      setSyncingMeta(hasMeta && !hasInstagramTarget);
+      updateSyncState(list);
     } catch {
       if (!cached.data) {
         setError("Failed to load accounts");
@@ -58,7 +58,7 @@ function ConnectedAccounts() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [updateSyncState]);
 
   useEffect(() => {
     fetchAccounts();
@@ -67,47 +67,69 @@ function ConnectedAccounts() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const socialError = params.get("social_error");
+    const socialConnected = params.get("social_connected");
 
-    if (!socialError) {
+    if (socialConnected) {
+      setJustConnectedProvider(socialConnected);
+      fetchAccounts({ force: true });
+      toast.success(`${socialConnected[0].toUpperCase()}${socialConnected.slice(1)} connected.`);
+    }
+
+    if (socialError) {
+      if (socialError === "linkedin_cancelled") {
+        toast.info("LinkedIn connection was cancelled.");
+      } else if (socialError === "linkedin_profile_timeout") {
+        toast.warning("LinkedIn was slow to respond. If the account connected, it will appear below.");
+      } else if (socialError === "linkedin_callback_failed") {
+        toast.error("LinkedIn connection did not complete. Please try again.");
+      }
+    }
+
+    if (!socialError && !socialConnected) {
       return;
     }
 
-    if (socialError === "linkedin_cancelled") {
-      toast.info("LinkedIn connection was cancelled.");
-    } else if (socialError === "linkedin_profile_timeout") {
-      toast.warning("LinkedIn was slow to respond. If the account connected, it will appear below.");
-    } else if (socialError === "linkedin_callback_failed") {
-      toast.error("LinkedIn connection did not complete. Please try again.");
-    }
-
+    params.delete("social_connected");
     params.delete("social_error");
     const nextQuery = params.toString();
     const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}`;
     window.history.replaceState({}, "", nextUrl);
-  }, []);
+  }, [fetchAccounts]);
 
   useEffect(() => {
     const onFocus = () => {
-      fetchAccounts();
+      fetchAccounts({ force: true });
     };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, [fetchAccounts]);
 
   useEffect(() => {
-    if (!syncingMeta) return;
+    if (!syncingMeta && !justConnectedProvider) return;
     const timer = setInterval(() => {
-      fetchAccounts();
-    }, 5000);
+      fetchAccounts({ force: true });
+    }, justConnectedProvider ? 2500 : 5000);
     return () => clearInterval(timer);
-  }, [syncingMeta, fetchAccounts]);
+  }, [syncingMeta, justConnectedProvider, fetchAccounts]);
+
+  useEffect(() => {
+    if (!justConnectedProvider) {
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      setJustConnectedProvider(null);
+    }, 20000);
+
+    return () => window.clearTimeout(timer);
+  }, [justConnectedProvider]);
 
   const handleRefresh = async (accountId) => {
     try {
       await refreshAccount(accountId);
       toast.success("Refresh triggered");
       setTimeout(() => {
-        fetchAccounts();
+        fetchAccounts({ force: true });
       }, 1200);
     } catch (err) {
       console.error(err);
@@ -151,6 +173,11 @@ function ConnectedAccounts() {
     [accounts],
   );
 
+  const pendingAccounts = useMemo(
+    () => accounts.filter((account) => (account.publishing_targets || []).length === 0),
+    [accounts],
+  );
+
   if (loading) return <div className="p-4 sm:p-6 lg:p-8">Loading...</div>;
   if (error) return <div className="p-4 sm:p-6 lg:p-8 text-red-500">{error}</div>;
 
@@ -189,11 +216,50 @@ function ConnectedAccounts() {
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         <SummaryCard title="Healthy" value={healthy} />
         <SummaryCard title="Alerts" value={alerts} />
-        <SummaryCard title="Total Profiles" value={flattenedTargets.length} />
+        <SummaryCard title="Total Profiles" value={flattenedTargets.length + pendingAccounts.length} />
         <SummaryCard title="Platforms" value={accounts.length} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
+        {pendingAccounts.map((account) => (
+          <div
+            key={account.id}
+            className="bg-white border border-amber-200 rounded-xl p-4 sm:p-5 lg:p-6 shadow-sm"
+          >
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="font-medium">{account.account_name}</h3>
+              <span className="text-xs px-3 py-1 rounded-full bg-amber-100 text-amber-700">
+                Syncing
+              </span>
+            </div>
+
+            <p className="text-xs text-gray-500 mb-4">{account.provider}</p>
+            <p className="text-sm text-gray-600">
+              The account is connected. We’re still loading its publishing targets.
+            </p>
+
+            <div className="flex gap-3 mt-5 flex-wrap">
+              <button
+                onClick={() => fetchAccounts({ force: true })}
+                className="text-sm text-gray-600 hover:text-gray-900"
+              >
+                Check again
+              </button>
+              <button
+                onClick={() =>
+                  setDisconnectTarget({
+                    accountId: account.id,
+                    name: account.account_name || account.provider,
+                  })
+                }
+                className="text-sm text-red-500 hover:text-red-600"
+              >
+                Disconnect
+              </button>
+            </div>
+          </div>
+        ))}
+
         {flattenedTargets.map((target) => {
           const tokenHealth = calculateTokenHealth(
             target.parentAccount.token_expires_at,

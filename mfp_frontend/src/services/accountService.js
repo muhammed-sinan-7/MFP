@@ -23,7 +23,7 @@ export const getCachedSocialList = () => {
       data,
       fresh: Boolean(data) && Date.now() - ts < ACCOUNTS_TTL_MS,
     };
-  } catch (error) {
+  } catch {
     return { data: null, fresh: false };
   }
 };
@@ -38,7 +38,8 @@ export const cacheSocialList = (data) => {
     window.sessionStorage.setItem(ACCOUNTS_CACHE_TS_KEY, String(Date.now()));
     window.localStorage.setItem(ACCOUNTS_CACHE_KEY, JSON.stringify(data));
     window.localStorage.setItem(ACCOUNTS_CACHE_TS_KEY, String(Date.now()));
-  } catch (error) {
+  } catch {
+    return;
   }
 };
 
@@ -52,13 +53,14 @@ export const clearSocialListCache = () => {
     window.sessionStorage.removeItem(ACCOUNTS_CACHE_TS_KEY);
     window.localStorage.removeItem(ACCOUNTS_CACHE_KEY);
     window.localStorage.removeItem(ACCOUNTS_CACHE_TS_KEY);
-  } catch (error) {
+  } catch {
+    return;
   }
 };
 
 // List connected social accounts
 export const socialList = () => {
-  return api.get("/social/", { params: { t: Date.now() } });
+  return api.get("/social/");
 };
 
 

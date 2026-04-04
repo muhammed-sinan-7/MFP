@@ -26,7 +26,6 @@ from apps.social_accounts.models import (
     SocialProvider,
 )
 from apps.social_accounts.services.linkedin import LinkedInOAuthService, LinkedInService
-from apps.social_accounts.services.meta_sync_service import MetaSyncService
 from apps.social_accounts.services.youtube import YouTubeOAuthService
 
 from ..services.meta import MetaOAuthService
@@ -179,16 +178,8 @@ class MetaCallbackView(APIView):
             },
         )
 
-        # Run one synchronous sync to avoid "connected account not visible until reload" UX.
-        try:
-            MetaSyncService.sync_pages(social_account)
-        except Exception as exc:
-            logger.warning("Immediate Meta sync failed for account %s: %s", social_account.id, str(exc))
-
-        # Keep async sync for eventual consistency and retries.
         sync_meta_pages_task.delay(social_account.id)
-
-        return redirect(f"{settings.FRONTEND_SUCCESS_URL}/accounts")
+        return redirect(f"{settings.FRONTEND_SUCCESS_URL}/accounts?social_connected=meta")
 
 
 class MetaPageSyncView(APIView):
@@ -290,7 +281,7 @@ class LinkedInCallbackView(OrganizationContextMixin, APIView):
                 f"{settings.FRONTEND_SUCCESS_URL}/accounts?social_error={error_code}"
             )
 
-        return redirect(f"{settings.FRONTEND_SUCCESS_URL}/accounts")
+        return redirect(f"{settings.FRONTEND_SUCCESS_URL}/accounts?social_connected=linkedin")
 
 
 class SocialAccountListView(OrganizationContextMixin, APIView):
@@ -301,6 +292,12 @@ class SocialAccountListView(OrganizationContextMixin, APIView):
 
         accounts = SocialAccount.objects.filter(
             organization=organization, is_active=True
+        ).only(
+            "id",
+            "provider",
+            "account_name",
+            "token_expires_at",
+            "is_active",
         ).prefetch_related(
             Prefetch(
                 "publishing_targets",
@@ -387,7 +384,7 @@ class YouTubeCallbackView(APIView):
             },
         )
 
-        return redirect(f"{settings.FRONTEND_SUCCESS_URL}/accounts")
+        return redirect(f"{settings.FRONTEND_SUCCESS_URL}/accounts?social_connected=youtube")
 
 
 class PublishingTargetListAPIView(OrganizationContextMixin, ListAPIView):
@@ -410,22 +407,6 @@ class PublishingTargetListAPIView(OrganizationContextMixin, ListAPIView):
 
         has_instagram = queryset.filter(provider=SocialProvider.INSTAGRAM).exists()
         if not has_instagram:
-            meta_accounts = SocialAccount.objects.filter(
-                organization=request.organization,
-                provider=SocialProvider.META,
-                is_active=True,
-            ).only("id", "access_token")
-
-            for account in meta_accounts:
-                try:
-                    MetaSyncService.sync_pages(account)
-                except Exception as exc:
-                    logger.warning(
-                        "Auto-sync before publishing-targets failed for account %s: %s",
-                        account.id,
-                        str(exc),
-                    )
-
             # DB-level recovery: if Meta pages already have IG business IDs,
             # recreate missing Instagram publishing targets without calling Graph.
             meta_pages = (

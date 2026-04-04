@@ -12,11 +12,12 @@ User = get_user_model()
 
 
 def register_user(email, password):
-    user = User.objects.create_user(email=email, password=password)
-
-    user.is_active = False
-    user.is_email_verified = False
-    user.save(update_fields=["is_active", "is_email_verified"])
+    user = User.objects.create_user(
+        email=email,
+        password=password,
+        is_active=False,
+        is_email_verified=False,
+    )
 
     create_otp(user=user, purpose="email_verification")
 
