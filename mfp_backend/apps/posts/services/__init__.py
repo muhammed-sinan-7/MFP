@@ -6,7 +6,6 @@ from .youtube import YouTubePublisher
 
 
 def get_publisher(provider: str):
-
     if provider == SocialProvider.LINKEDIN:
         return LinkedInPublisher()
 

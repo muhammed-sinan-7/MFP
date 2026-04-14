@@ -1,9 +1,5 @@
 import { XMarkIcon } from "@heroicons/react/24/outline";
-import {
-  metaConnect,
-  linkedinConnect,
-  youtubeConnect,
-} from "../../services/accountService";
+import { linkedinConnect } from "../../services/accountService";
 import { toast } from "sonner";
 
 function ConnectAccountModal({ isOpen, onClose }) {
@@ -21,7 +17,6 @@ function ConnectAccountModal({ isOpen, onClose }) {
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div className="bg-white w-full max-w-[480px] rounded-2xl p-5 sm:p-8 border border-gray-200 relative shadow-lg">
-
         <button
           onClick={onClose}
           className="absolute right-4 top-4 text-gray-400 hover:text-gray-700"
@@ -35,13 +30,12 @@ function ConnectAccountModal({ isOpen, onClose }) {
 
         <div className="space-y-4">
           <button
-            onClick={() => connect(metaConnect)}
-            className="w-full border border-gray-300 rounded-xl p-4 text-left hover:bg-gray-50"
+            type="button"
+            disabled
+            className="w-full border border-gray-200 rounded-xl p-4 text-left bg-gray-50 text-gray-500 cursor-not-allowed"
           >
             <div className="font-medium">Meta (Facebook & Instagram)</div>
-            <div className="text-xs text-gray-500">
-              Connect Meta business accounts
-            </div>
+            <div className="text-xs text-gray-500">Under approval state - Coming soon</div>
           </button>
 
           <button
@@ -55,13 +49,12 @@ function ConnectAccountModal({ isOpen, onClose }) {
           </button>
 
           <button
-            onClick={() => connect(youtubeConnect)}
-            className="w-full border border-gray-300 rounded-xl p-4 text-left hover:bg-gray-50"
+            type="button"
+            disabled
+            className="w-full border border-gray-200 rounded-xl p-4 text-left bg-gray-50 text-gray-500 cursor-not-allowed"
           >
             <div className="font-medium">YouTube</div>
-            <div className="text-xs text-gray-500">
-              Connect YouTube channel
-            </div>
+            <div className="text-xs text-gray-500">Under approval state - Coming soon</div>
           </button>
         </div>
       </div>

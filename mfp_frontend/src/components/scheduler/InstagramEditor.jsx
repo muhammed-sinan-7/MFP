@@ -45,6 +45,19 @@ export default function InstagramEditor({
 
   const datePart = scheduledTime?.slice(0, 10) || "2024-06-24";
   const timePart = scheduledTime?.slice(11, 16) || "09:30";
+  const profileName = target?.account_name || target?.display_name || "Account";
+  const profileImage =
+    target?.profile_image ||
+    target?.profile_image_url ||
+    target?.avatar ||
+    target?.avatar_url ||
+    target?.image_url ||
+    target?.logo_url ||
+    target?.ui?.profile_image ||
+    target?.ui?.profile_image_url ||
+    target?.metadata?.profile_image ||
+    target?.metadata?.profile_image_url ||
+    null;
 
   return (
     <div className="flex flex-col 2xl:flex-row text-[#262626] font-sans relative gap-3">
@@ -233,7 +246,17 @@ export default function InstagramEditor({
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 to-purple-600 p-[1.5px]">
                   <div className="w-full h-full rounded-full border-2 border-white bg-gray-200 overflow-hidden">
-                    <img src="https://i.pravatar.cc/100?u=alex" alt="profile" />
+                    {profileImage ? (
+                      <img
+                        src={profileImage}
+                        alt={profileName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-[10px] font-semibold text-gray-500 bg-gray-100">
+                        {profileName.charAt(0).toUpperCase()}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div>

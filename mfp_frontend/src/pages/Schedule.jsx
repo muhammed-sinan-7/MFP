@@ -14,6 +14,7 @@ import PlatformSidebar from "../components/scheduler/platformSidebar";
 import PlatformEditor from "../components/scheduler/PlatformEditor";
 import { useLocation } from "react-router-dom";
 import AIAssistPanel from "../components/scheduler/AIAssistantPanel";
+import { getCachedSocialList, socialList } from "../services/accountService";
 
 export default function SchedulePage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -109,7 +110,34 @@ export default function SchedulePage() {
           hasNext = Boolean(payload.next);
           page += 1;
         }
-        setTargets(merged);
+
+        let accounts = getCachedSocialList().data || [];
+        try {
+          const accountsRes = await socialList();
+          accounts = accountsRes?.data || accounts;
+        } catch {
+          // Keep cached data if network fetch fails.
+        }
+
+        const accountNameByTargetId = new Map();
+        for (const account of accounts) {
+          for (const target of account.publishing_targets || []) {
+            accountNameByTargetId.set(
+              Number(target.id),
+              account.account_name || account.provider || "",
+            );
+          }
+        }
+
+        const enrichedTargets = merged.map((target) => ({
+          ...target,
+          account_name:
+            target.account_name ||
+            accountNameByTargetId.get(Number(target.id)) ||
+            "",
+        }));
+
+        setTargets(enrichedTargets);
       } catch (err) { console.error("Failed to load targets", err); }
     }
     loadTargets();

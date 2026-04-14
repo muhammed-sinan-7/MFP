@@ -40,6 +40,18 @@ export default function LinkedInEditor({
     }));
   };
   const display_name = target.display_name;
+  const profileImage =
+    target?.profile_image ||
+    target?.profile_image_url ||
+    target?.avatar ||
+    target?.avatar_url ||
+    target?.image_url ||
+    target?.logo_url ||
+    target?.ui?.profile_image ||
+    target?.ui?.profile_image_url ||
+    target?.metadata?.profile_image ||
+    target?.metadata?.profile_image_url ||
+    null;
   const datePart = scheduledTime?.slice(0, 10) || "";
   const timePart = scheduledTime?.slice(11, 16) || "";
 
@@ -196,11 +208,17 @@ export default function LinkedInEditor({
             {/* Actor Info */}
             <div className="flex items-start gap-2 p-3 pb-2">
               <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden shrink-0">
-                <img
-                  src="https://i.pravatar.cc/150?u=alex"
-                  className="w-full h-full object-cover"
-                  alt="Profile"
-                />
+                {profileImage ? (
+                  <img
+                    src={profileImage}
+                    className="w-full h-full object-cover"
+                    alt={display_name || "Profile"}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-sm font-semibold text-gray-500 bg-gray-100">
+                    {(display_name || "A").charAt(0).toUpperCase()}
+                  </div>
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">

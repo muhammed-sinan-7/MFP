@@ -27,12 +27,15 @@ export default function PlatformSidebar({
       {targets.map((target) => {
 
         const active = activeTarget?.id === target.id;
+        const accountName = target.account_name || target.display_name || "Connected account";
+        const showTargetName =
+          target.display_name && target.display_name !== accountName;
 
         return (
           <button
             key={target.id}
             onClick={() => onSelect(target)}
-            className={`flex items-center gap-3 lg:gap-4 px-3 lg:px-4 py-3 lg:py-4 transition min-w-max lg:min-w-0
+            className={`group flex items-center gap-3 lg:gap-4 px-3 lg:px-4 py-3 lg:py-4 transition min-w-max lg:min-w-0
             ${active ? "bg-gray-100" : "hover:bg-gray-50"}`}
           >
 
@@ -49,8 +52,13 @@ export default function PlatformSidebar({
               </div>
 
               <div className="text-xs text-gray-500">
-                {target.display_name}
+                {accountName}
               </div>
+              {showTargetName && (
+                <div className="text-[11px] text-gray-400">
+                  {target.display_name}
+                </div>
+              )}
 
             </div>
 

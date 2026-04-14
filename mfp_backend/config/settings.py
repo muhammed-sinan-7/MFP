@@ -21,7 +21,10 @@ from sentry_sdk.integrations.django import DjangoIntegration
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(os.path.join(BASE_DIR.parent, ".env"))
 load_dotenv(os.path.join(BASE_DIR, ".env"))
+load_dotenv(os.path.join(BASE_DIR, ".env.local"), override=True)
+
 AUTH_USER_MODEL = "authentication.User"
 
 
@@ -30,6 +33,18 @@ def env_list(name, default=None):
     if value is None:
         return default or []
     return [item.strip() for item in value.split(",") if item.strip()]
+
+
+def env_optional(name, default=None):
+    value = os.getenv(name)
+    if value is None:
+        return default
+
+    value = value.strip()
+    if value == "":
+        return None
+
+    return value
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
@@ -58,8 +73,8 @@ ALLOWED_HOSTS = env_list(
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", DEFAULT_FRONTEND_ORIGIN)
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", [FRONTEND_ORIGIN])
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS", [FRONTEND_ORIGIN])
-SESSION_COOKIE_DOMAIN = os.getenv("SESSION_COOKIE_DOMAIN", DEFAULT_COOKIE_DOMAIN)
-CSRF_COOKIE_DOMAIN = os.getenv("CSRF_COOKIE_DOMAIN", DEFAULT_COOKIE_DOMAIN)
+SESSION_COOKIE_DOMAIN = env_optional("SESSION_COOKIE_DOMAIN", DEFAULT_COOKIE_DOMAIN)
+CSRF_COOKIE_DOMAIN = env_optional("CSRF_COOKIE_DOMAIN", DEFAULT_COOKIE_DOMAIN)
 
 SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", str(DEFAULT_COOKIE_SECURE)) == "True"
 CSRF_COOKIE_SECURE = os.getenv("CSRF_COOKIE_SECURE", str(DEFAULT_COOKIE_SECURE)) == "True"
@@ -77,7 +92,7 @@ USE_X_FORWARDED_HOST = True
 CORS_ALLOW_CREDENTIALS = True
 
 AUTH_REFRESH_COOKIE_NAME = os.getenv("AUTH_REFRESH_COOKIE_NAME", "refresh_token")
-AUTH_REFRESH_COOKIE_DOMAIN = os.getenv(
+AUTH_REFRESH_COOKIE_DOMAIN = env_optional(
     "AUTH_REFRESH_COOKIE_DOMAIN",
     SESSION_COOKIE_DOMAIN,
 )
