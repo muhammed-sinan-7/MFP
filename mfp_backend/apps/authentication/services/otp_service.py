@@ -1,8 +1,6 @@
 # apps/authentication/services/otp_service.py
 
 import secrets
-import threading
-import logging
 import hashlib
 import hmac
 from datetime import timedelta
@@ -21,9 +19,6 @@ from apps.authentication.models import OTPToken
 
 from ..tasks import send_otp_email_task
 
-logger = logging.getLogger(__name__)
-
-
 def _otp_digest(user_id, purpose, otp_value):
     payload = f"{user_id}:{purpose}:{otp_value}".encode()
     secret = settings.SECRET_KEY.encode()
@@ -31,14 +26,7 @@ def _otp_digest(user_id, purpose, otp_value):
 
 
 def _dispatch_otp_email(email, otp, purpose):
-    def _runner():
-        try:
-            # Synchronous task call inside background thread avoids broker round-trip latency.
-            send_otp_email_task(email, otp, purpose)
-        except Exception as err:
-            logger.exception("OTP email send failed: %s", err)
-
-    threading.Thread(target=_runner, daemon=True).start()
+    send_otp_email_task.delay(email, otp, purpose)
 
 
 def generate_otp():
